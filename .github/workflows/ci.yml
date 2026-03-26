@@ -45,7 +45,7 @@ jobs:
       - name: Run tests
         run: cargo test -p filebrowser-app --features ssr
       - name: Run backend tests
-        run: cargo test -p filebrowser-backend --features ssr
+        run: cargo test -p filebrowser-backend
       - name: Run types tests
         run: cargo test -p filebrowser-types
 
