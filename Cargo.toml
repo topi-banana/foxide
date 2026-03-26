@@ -1,0 +1,50 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+resolver = "3"
+members = [
+  "app",
+  "backend",
+  "frontend",
+  "types",
+]
+
+[workspace.dependencies]
+leptos = { version = "0.7" }
+leptos_meta = { version = "0.7" }
+leptos_router = { version = "0.7" }
+leptos_axum = { version = "0.7" }
+axum = { version = "0.7" }
+tokio = { version = "1", features = ["full"] }
+wasm-bindgen = { version = "0.2" }
+console_error_panic_hook = { version = "0.1" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+reqwest = { version = "0.12", features = ["json"] }
+filebrowser-app = { path = "app" }
+filebrowser-backend = { path = "backend" }
+filebrowser-frontend = { path = "frontend" }
+filebrowser-types = { path = "types" }
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+
+[[workspace.metadata.leptos]]
+name = "filebrowser"
+bin-package = "filebrowser-app"
+lib-package = "filebrowser-frontend"
+bin-default-features = false
+bin-features = ["ssr"]
+lib-default-features = false
+lib-features = ["hydrate"]
+site-root = "target/site"
+site-pkg-dir = "pkg"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+browserquery = "defaults"
+env = "DEV"

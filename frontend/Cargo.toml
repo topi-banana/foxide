@@ -1,0 +1,27 @@
+[package]
+name = "filebrowser-frontend"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+wasm-bindgen = { workspace = true, optional = true }
+console_error_panic_hook = { workspace = true, optional = true }
+filebrowser-types = { workspace = true }
+
+[features]
+hydrate = [
+    "dep:wasm-bindgen",
+    "dep:console_error_panic_hook",
+    "leptos/hydrate",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]

@@ -1,0 +1,25 @@
+[package]
+name = "filebrowser-backend"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+axum = { workspace = true, optional = true }
+leptos = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+filebrowser-frontend = { workspace = true }
+filebrowser-types = { workspace = true }
+
+[features]
+default = []
+ssr = [
+    "dep:axum",
+    "dep:leptos_axum",
+    "leptos/ssr",
+    "filebrowser-frontend/ssr",
+]
