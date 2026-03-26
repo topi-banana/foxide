@@ -3,21 +3,16 @@ name = "filebrowser-app"
 version.workspace = true
 edition.workspace = true
 
-[lib]
-path = "src/lib.rs"
-
-[[bin]]
-name = "filebrowser-app"
-path = "src/main.rs"
-
 [dependencies]
 leptos = { workspace = true }
 leptos_axum = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
-tokio = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"], optional = true }
 filebrowser-frontend = { workspace = true }
-filebrowser-backend = { workspace = true }
-filebrowser-types = { workspace = true }
+filebrowser-backend = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
+tower-http = { workspace = true, optional = true }
 
 [dev-dependencies]
 reqwest = { workspace = true }
@@ -32,5 +27,8 @@ ssr = [
     "dep:leptos_axum",
     "leptos/ssr",
     "filebrowser-frontend/ssr",
-    "filebrowser-backend/ssr",
+    "dep:filebrowser-backend",
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "dep:tower-http",
 ]

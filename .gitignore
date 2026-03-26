@@ -1,1 +1,4 @@
 /target
+frontend/daisyui.mjs
+frontend/daisyui-theme.mjs
+frontend/output.css

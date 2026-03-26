@@ -1,10 +1,12 @@
-use axum::Router;
-use axum::routing::get;
+use filebrowser_backend::build_app;
+use leptos::prelude::*;
 use reqwest::Client;
 use std::net::SocketAddr;
 
 async fn spawn_server() -> SocketAddr {
-    let app = Router::new().route("/api/health", get(filebrowser_backend::api::health));
+    let conf = get_configuration(None).unwrap();
+    let leptos_options = conf.leptos_options;
+    let app = build_app(leptos_options);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -24,7 +26,7 @@ async fn health_returns_ok() {
     let client = Client::new();
 
     let resp = client
-        .get(format!("http://{}/api/health", addr))
+        .get(format!("http://{}/health", addr))
         .send()
         .await
         .unwrap();

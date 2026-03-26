@@ -17,12 +17,15 @@ leptos_meta = { version = "0.7" }
 leptos_router = { version = "0.7" }
 leptos_axum = { version = "0.7" }
 axum = { version = "0.7" }
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1" }
 wasm-bindgen = { version = "0.2" }
 console_error_panic_hook = { version = "0.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 reqwest = { version = "0.12", features = ["json"] }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower-http = { version = "0.6", features = ["trace"] }
 filebrowser-app = { path = "app" }
 filebrowser-backend = { path = "backend" }
 filebrowser-frontend = { path = "frontend" }
@@ -47,4 +50,5 @@ site-pkg-dir = "pkg"
 site-addr = "127.0.0.1:3000"
 reload-port = 3001
 browserquery = "defaults"
-env = "DEV"
+style-file = "frontend/output.css"
+tailwind-input-file = "frontend/input.css"

@@ -1,46 +1,74 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは Claude Code (claude.ai/code) がこのリポジトリで作業する際のガイドです。
 
-## Project Overview
+## プロジェクト概要
 
-Filebrowser is a Rust workspace project with three crates:
+Leptos (SSR + Hydration) と Axum で構築されたファイルブラウザ。
 
-- **backend** (`filebrowser-backend`) — Async server using Tokio
-- **frontend** (`filebrowser-frontend`) — Client/UI crate
-- **types** (`filebrowser-types`) — Shared types between backend and frontend
+Rust 2024 edition のワークスペースで、4つのクレートから構成される:
 
-## Build Commands
+| ディレクトリ | クレート | 役割 |
+|-----------|-------|------|
+| `app/` | `filebrowser-app` | サーバー起動 (Axum + Leptos SSR) |
+| `frontend/` | `filebrowser-frontend` | UIコンポーネント、Router、hydration エントリ |
+| `backend/` | `filebrowser-backend` | APIエンドポイント、サーバーファンクション |
+| `types/` | `filebrowser-types` | 共有型定義 |
+
+## 前提条件
+
+- [Rust](https://rustup.rs/) (edition 2024)
+- [cargo-leptos](https://github.com/leptos-rs/cargo-leptos) (ホットリロード付き開発サーバー用)
 
 ```bash
-# Build entire workspace
-cargo build
-
-# Build a single crate
-cargo build -p filebrowser-backend
-
-# Run a specific crate
-cargo run -p filebrowser-backend
-
-# Run tests (all crates)
-cargo test
-
-# Run tests for a single crate
-cargo test -p filebrowser-types
-
-# Run a single test by name
-cargo test -p filebrowser-backend test_name
-
-# Check without building
-cargo check
-
-# Lint
-cargo clippy --workspace
-
-# Format
-cargo fmt --all
+cargo install cargo-leptos
 ```
 
-## Architecture
+## 開発コマンド
 
-Rust 2024 edition workspace using resolver v3. The `types` crate is intended as the shared dependency between `backend` and `frontend`, keeping type definitions in one place.
+```bash
+# 開発サーバー起動 (ホットリロード付き、http://127.0.0.1:3000)
+cargo leptos watch
+
+# フォーマットチェック
+cargo fmt --all -- --check
+
+# Lint (SSR側)
+cargo clippy -p filebrowser-app --features ssr
+
+# Lint (hydrate/WASM側)
+cargo clippy -p filebrowser-frontend --features hydrate
+
+# テスト (サーバー起動してAPIエンドポイントをテスト)
+cargo test -p filebrowser-app --features ssr
+
+# backend/types テスト
+cargo test -p filebrowser-backend
+cargo test -p filebrowser-types
+```
+
+### 全チェックを一括実行
+
+```bash
+cargo fmt --all -- --check \
+  && cargo clippy -p filebrowser-app --features ssr \
+  && cargo clippy -p filebrowser-frontend --features hydrate \
+  && cargo test -p filebrowser-app --features ssr \
+  && cargo test -p filebrowser-backend \
+  && cargo test -p filebrowser-types
+```
+
+## CI
+
+GitHub Actions が `main` への push / PR ごとに以下を実行:
+
+- **Format** — `cargo fmt --check`
+- **Clippy** — SSR と hydrate 両方の lint
+- **Test** — サーバーを起動してAPIエンドポイントを検証する統合テスト
+- **Build** — フル SSR ビルド
+
+## 注意事項
+
+- Clippy はワークスペース全体ではなく、SSR (`--features ssr`) と hydrate (`--features hydrate`) で分けて実行する
+- テスト時も `--features ssr` フラグが必要なクレートがある
+- `types` クレートは `backend` と `frontend` の共有依存として型定義を一元管理する
