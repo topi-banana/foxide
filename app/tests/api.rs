@@ -1,3 +1,5 @@
+#![cfg(feature = "ssr")]
+
 use filebrowser_backend::build_app;
 use leptos::prelude::*;
 use reqwest::Client;
