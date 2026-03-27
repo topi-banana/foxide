@@ -1,6 +1,6 @@
 #![cfg(feature = "ssr")]
 
-use filebrowser_backend::build_app;
+use filebrowser_backend::{AppState, build_app};
 use leptos::prelude::*;
 use reqwest::Client;
 use std::net::SocketAddr;
@@ -8,7 +8,8 @@ use std::net::SocketAddr;
 async fn spawn_server() -> SocketAddr {
     let conf = get_configuration(None).unwrap();
     let leptos_options = conf.leptos_options;
-    let app = build_app(leptos_options);
+    let state = AppState { leptos_options };
+    let app = build_app(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
