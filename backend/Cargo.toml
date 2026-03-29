@@ -9,11 +9,17 @@ path = "src/lib.rs"
 [dependencies]
 tracing = { workspace = true }
 tower-http = { workspace = true }
+tower-cookies = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
 axum = { workspace = true }
 leptos = { workspace = true }
 leptos_axum = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 filebrowser-frontend = { workspace = true, features = ["ssr"] }
+rand = { workspace = true }
+sha2 = { workspace = true }
+url = { workspace = true }
+reqwest = { workspace = true }
 
 [features]

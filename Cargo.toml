@@ -12,24 +12,28 @@ members = [
 ]
 
 [workspace.dependencies]
-leptos = { version = "0.7" }
-leptos_meta = { version = "0.7" }
-leptos_router = { version = "0.7" }
-leptos_axum = { version = "0.7" }
-axum = { version = "0.7" }
+leptos = { version = "0.8" }
+leptos_meta = { version = "0.8" }
+leptos_router = { version = "0.8" }
+leptos_axum = { version = "0.8" }
+axum = { version = "0.8" }
 tokio = { version = "1" }
 wasm-bindgen = { version = "0.2" }
 console_error_panic_hook = { version = "0.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["form", "json"] }
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-http = { version = "0.6", features = ["trace"] }
+tower-cookies = { version = "0.11" }
 filebrowser-app = { path = "app" }
 filebrowser-backend = { path = "backend" }
 filebrowser-frontend = { path = "frontend" }
 filebrowser-types = { path = "types" }
+rand = { version = "0.10" }
+sha2 = { version = "0.11" }
+url = { version = "2.5", features = ["serde"] }
 
 [profile.wasm-release]
 inherits = "release"
