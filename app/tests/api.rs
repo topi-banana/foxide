@@ -8,7 +8,13 @@ use std::net::SocketAddr;
 async fn spawn_server() -> SocketAddr {
     let conf = get_configuration(None).unwrap();
     let leptos_options = conf.leptos_options;
-    let state = AppState { leptos_options };
+    let state = AppState::new(
+        leptos_options,
+        0,
+        String::new(),
+        0,
+        url::Url::parse("http://localhost").unwrap(),
+    );
     let app = build_app(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

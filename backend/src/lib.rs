@@ -27,6 +27,26 @@ pub struct AppState {
     pub user_storage: Arc<UserStorage>,
 }
 
+impl AppState {
+    pub fn new(
+        leptos_options: LeptosOptions,
+        client_id: u64,
+        client_secret: String,
+        guild_id: u64,
+        redirect_uri: url::Url,
+    ) -> Self {
+        Self {
+            leptos_options,
+            client_id,
+            client_secret,
+            guild_id,
+            redirect_uri,
+            token_storage: Arc::new(TokenStorage::new()),
+            user_storage: Arc::new(UserStorage::new()),
+        }
+    }
+}
+
 impl FromRef<AppState> for LeptosOptions {
     fn from_ref(state: &AppState) -> Self {
         state.leptos_options.clone()
@@ -64,15 +84,13 @@ pub async fn run() {
             url::Url::parse(&default).unwrap()
         });
 
-    let state = AppState {
+    let state = AppState::new(
         leptos_options,
         client_id,
         client_secret,
         guild_id,
         redirect_uri,
-        token_storage: Arc::new(TokenStorage::new()),
-        user_storage: Arc::new(UserStorage::new()),
-    };
+    );
     let app = build_app(state);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
