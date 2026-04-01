@@ -117,11 +117,14 @@ pub async fn login_callback(
                 })?
             };
 
-            let user_id = userdata.id.parse::<u64>().unwrap();
+            let user = User {
+                user_id: userdata.id.parse::<u64>().unwrap(),
+                username: userdata.username,
+            };
 
-            state.user_storage.insert(User { user_id }).await;
+            state.user_storage.insert(user.clone()).await;
 
-            let session_token = state.token_storage.create(User { user_id }).await;
+            let session_token = state.token_storage.create(user).await;
 
             cookies.add(
                 Cookie::build(("auth-session", session_token))
@@ -132,8 +135,10 @@ pub async fn login_callback(
                     .build(),
             );
 
-            if let Some(redirect_path) = cookies.get("auth-redirect") {
-                Ok(Redirect::to(redirect_path.value()))
+            if let Some(redirect_cookie) = cookies.get("auth-redirect") {
+                let redirect_path = redirect_cookie.value().to_owned();
+                cookies.remove(Cookie::build("auth-redirect").path("/").build());
+                Ok(Redirect::to(&redirect_path))
             } else {
                 Ok(Redirect::to("/"))
             }

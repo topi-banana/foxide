@@ -1,5 +1,7 @@
 mod health;
 mod login;
+mod logout;
+mod ws;
 
 use std::sync::Arc;
 
@@ -7,6 +9,7 @@ use axum::Router;
 use axum::extract::FromRef;
 use leptos::prelude::*;
 use leptos_axum::{LeptosRoutes, generate_route_list};
+use tower_cookies::CookieManagerLayer;
 use tower_http::trace::TraceLayer;
 
 use filebrowser_frontend::{App, shell};
@@ -107,11 +110,14 @@ pub fn build_app(state: AppState) -> Router {
     Router::<AppState>::new()
         .nest("/health", crate::health::router())
         .nest("/login", crate::login::router())
+        .nest("/logout", crate::logout::router())
+        .nest("/ws", crate::ws::router())
         .leptos_routes(&state, routes, {
             let options = state.leptos_options.clone();
             move || shell(options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
+        .layer(CookieManagerLayer::new())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

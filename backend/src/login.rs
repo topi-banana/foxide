@@ -21,7 +21,8 @@ pub fn router() -> Router<AppState> {
 
 #[derive(Clone)]
 pub struct User {
-    user_id: u64,
+    pub user_id: u64,
+    pub username: String,
 }
 
 pub struct UserStorage {

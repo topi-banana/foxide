@@ -16,7 +16,7 @@ leptos = { version = "0.8" }
 leptos_meta = { version = "0.8" }
 leptos_router = { version = "0.8" }
 leptos_axum = { version = "0.8" }
-axum = { version = "0.8" }
+axum = { version = "0.8", features = ["ws"] }
 tokio = { version = "1" }
 wasm-bindgen = { version = "0.2" }
 console_error_panic_hook = { version = "0.1" }
@@ -34,6 +34,8 @@ filebrowser-types = { path = "types" }
 rand = { version = "0.10" }
 sha2 = { version = "0.11" }
 url = { version = "2.5", features = ["serde"] }
+gloo-net = { version = "0.6", features = ["http", "json"] }
+bincode = { version = "2" }
 
 [profile.wasm-release]
 inherits = "release"
