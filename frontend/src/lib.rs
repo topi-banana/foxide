@@ -5,7 +5,7 @@ use leptos_meta::*;
 use leptos_router::components::*;
 use leptos_router::path;
 
-use header::Header;
+use header::{Header, Theme};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -30,11 +30,16 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 pub fn App() -> impl IntoView {
     provide_meta_context();
     let (sidebar_open, set_sidebar_open) = signal(false);
-    let (theme, set_theme) = signal("light".to_string());
+    let initial_theme = read_theme_cookie().unwrap_or(Theme::Light);
+    let (theme, set_theme) = signal(initial_theme);
+
+    Effect::new(move |_| {
+        write_theme_cookie(theme.get());
+    });
 
     view! {
         <Title text="Filebrowser"/>
-        <Html attr:data-theme=theme/>
+        <Html attr:data-theme=move || theme.get().to_string()/>
         <div class="flex h-screen">
             // Sidebar
             <aside
@@ -66,6 +71,32 @@ pub fn App() -> impl IntoView {
                 </main>
             </div>
         </div>
+    }
+}
+
+fn html_document() -> Option<web_sys::HtmlDocument> {
+    use wasm_bindgen::JsCast;
+    web_sys::window()?
+        .document()?
+        .dyn_into::<web_sys::HtmlDocument>()
+        .ok()
+}
+
+fn read_theme_cookie() -> Option<Theme> {
+    let cookies = html_document()?.cookie().ok()?;
+    cookies
+        .split(';')
+        .filter_map(|c| c.trim().strip_prefix("theme="))
+        .next()?
+        .parse()
+        .ok()
+}
+
+fn write_theme_cookie(theme: Theme) {
+    if let Some(doc) = html_document() {
+        let _ = doc.set_cookie(&format!(
+            "theme={theme};path=/;max-age=31536000;SameSite=Lax"
+        ));
     }
 }
 

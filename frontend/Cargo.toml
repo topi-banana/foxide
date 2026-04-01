@@ -13,9 +13,10 @@ leptos_router = { workspace = true }
 wasm-bindgen = { workspace = true }
 console_error_panic_hook = { workspace = true }
 gloo-net = { workspace = true }
-web-sys = { version = "0.3", features = ["Window", "Location", "WebSocket", "MessageEvent", "BinaryType"] }
+web-sys = { version = "0.3", features = ["Window", "Location", "WebSocket", "MessageEvent", "BinaryType", "Document", "HtmlDocument"] }
 js-sys = { version = "0.3" }
 bincode = { workspace = true }
+strum = { workspace = true }
 filebrowser-types = { workspace = true }
 
 [features]

@@ -1,36 +1,39 @@
 use leptos::prelude::*;
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 
-const THEMES: &[&str] = &[
-    "light",
-    "dark",
-    "cupcake",
-    "emerald",
-    "corporate",
-    "synthwave",
-    "retro",
-    "cyberpunk",
-    "valentine",
-    "halloween",
-    "forest",
-    "aqua",
-    "lofi",
-    "pastel",
-    "fantasy",
-    "dracula",
-    "autumn",
-    "business",
-    "night",
-    "coffee",
-    "winter",
-    "dim",
-    "nord",
-    "sunset",
-];
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumString, EnumIter)]
+#[strum(serialize_all = "lowercase")]
+pub enum Theme {
+    Light,
+    Dark,
+    Cupcake,
+    Emerald,
+    Corporate,
+    Synthwave,
+    Retro,
+    Cyberpunk,
+    Valentine,
+    Halloween,
+    Forest,
+    Aqua,
+    Lofi,
+    Pastel,
+    Fantasy,
+    Dracula,
+    Autumn,
+    Business,
+    Night,
+    Coffee,
+    Winter,
+    Dim,
+    Nord,
+    Sunset,
+}
 
 #[component]
 pub fn Header(
-    theme: ReadSignal<String>,
-    set_theme: WriteSignal<String>,
+    theme: ReadSignal<Theme>,
+    set_theme: WriteSignal<Theme>,
     set_sidebar_open: WriteSignal<bool>,
 ) -> impl IntoView {
     view! {
@@ -57,17 +60,22 @@ pub fn Header(
 }
 
 #[component]
-fn ThemeSwitcher(theme: ReadSignal<String>, set_theme: WriteSignal<String>) -> impl IntoView {
+fn ThemeSwitcher(theme: ReadSignal<Theme>, set_theme: WriteSignal<Theme>) -> impl IntoView {
     view! {
         <select
             class="select select-ghost select-sm w-32"
             on:change=move |ev| {
-                set_theme.set(event_target_value(&ev));
+                if let Ok(t) = event_target_value(&ev).parse::<Theme>() {
+                    set_theme.set(t);
+                }
             }
-            prop:value=theme
+            prop:value=move || theme.get().to_string()
         >
-            {THEMES.iter().map(|t| view! {
-                <option value={*t} selected=move || theme.get() == *t>{*t}</option>
+            {Theme::iter().map(|t| {
+                let name = t.to_string();
+                view! {
+                    <option value=name.clone() selected=move || theme.get() == t>{name.clone()}</option>
+                }
             }).collect_view()}
         </select>
     }
