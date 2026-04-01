@@ -81,6 +81,7 @@ fn ThemeSwitcher(theme: ReadSignal<Theme>, set_theme: WriteSignal<Theme>) -> imp
     }
 }
 
+#[cfg(feature = "hydrate")]
 fn connect_ws(set_user: WriteSignal<Option<String>>) {
     use filebrowser_types::ServerMsg;
     use wasm_bindgen::prelude::*;
@@ -95,8 +96,8 @@ fn connect_ws(set_user: WriteSignal<Option<String>>) {
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
     let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
-        if let Ok(buf) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
-            let bytes = js_sys::Uint8Array::new(&buf).to_vec();
+        if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
+            let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
             if let Ok((msg, _)) =
                 bincode::decode_from_slice::<ServerMsg, _>(&bytes, bincode::config::standard())
             {
@@ -116,6 +117,7 @@ fn connect_ws(set_user: WriteSignal<Option<String>>) {
 fn UserMenu() -> impl IntoView {
     let (user, set_user) = signal(None::<String>);
 
+    #[cfg(feature = "hydrate")]
     Effect::new(move |_| {
         connect_ws(set_user);
     });
@@ -150,12 +152,18 @@ fn UserMenu() -> impl IntoView {
     }
 }
 
+#[cfg(feature = "hydrate")]
 fn href_with_redirect(base: &str) -> String {
     let path = web_sys::window()
         .and_then(|w| w.location().pathname().ok())
         .unwrap_or_default();
-    let encoded = js_sys::encode_uri_component(&path);
+    let encoded = web_sys::js_sys::encode_uri_component(&path);
     format!("{base}?redirect={encoded}")
+}
+
+#[cfg(not(feature = "hydrate"))]
+fn href_with_redirect(base: &str) -> String {
+    base.to_string()
 }
 
 fn login_href_with_redirect() -> String {

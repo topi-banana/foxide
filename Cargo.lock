@@ -674,8 +674,6 @@ dependencies = [
  "bincode",
  "console_error_panic_hook",
  "filebrowser-types",
- "gloo-net",
- "js-sys",
  "leptos",
  "leptos_meta",
  "leptos_router",

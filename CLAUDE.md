@@ -60,11 +60,12 @@ cargo fmt --all -- --check \
 
 ## CI
 
-GitHub Actions が `main` への push / PR ごとに以下を実行:
+GitHub Actions が全ブランチへの push / PR ごとに以下を実行:
 
 - **Format** — `cargo fmt --check`
 - **Clippy** — SSR と hydrate 両方の lint
 - **Test** — サーバーを起動してAPIエンドポイントを検証する統合テスト
+- **Machete** — 未使用依存の検出 (`cargo-machete`)
 - **Build** — フル SSR ビルド
 
 ## 注意事項

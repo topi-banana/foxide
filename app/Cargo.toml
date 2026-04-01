@@ -20,6 +20,9 @@ reqwest = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 
+[package.metadata.cargo-machete]
+ignored = ["filebrowser-frontend", "leptos_axum", "tower-http"]
+
 [features]
 default = []
 ssr = [

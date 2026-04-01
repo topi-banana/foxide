@@ -30,10 +30,14 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 pub fn App() -> impl IntoView {
     provide_meta_context();
     let (sidebar_open, set_sidebar_open) = signal(false);
-    let initial_theme = read_theme_cookie().unwrap_or(Theme::Light);
-    let (theme, set_theme) = signal(initial_theme);
+    let (theme, set_theme) = signal(Theme::Light);
 
-    Effect::new(move |_| {
+    Effect::new(move |prev: Option<()>| {
+        if prev.is_none()
+            && let Some(t) = read_theme_cookie()
+        {
+            set_theme.set(t);
+        }
         write_theme_cookie(theme.get());
     });
 
@@ -74,6 +78,7 @@ pub fn App() -> impl IntoView {
     }
 }
 
+#[cfg(feature = "hydrate")]
 fn html_document() -> Option<web_sys::HtmlDocument> {
     use wasm_bindgen::JsCast;
     web_sys::window()?
@@ -82,6 +87,7 @@ fn html_document() -> Option<web_sys::HtmlDocument> {
         .ok()
 }
 
+#[cfg(feature = "hydrate")]
 fn read_theme_cookie() -> Option<Theme> {
     let cookies = html_document()?.cookie().ok()?;
     cookies
@@ -92,6 +98,12 @@ fn read_theme_cookie() -> Option<Theme> {
         .ok()
 }
 
+#[cfg(not(feature = "hydrate"))]
+fn read_theme_cookie() -> Option<Theme> {
+    None
+}
+
+#[cfg(feature = "hydrate")]
 fn write_theme_cookie(theme: Theme) {
     if let Some(doc) = html_document() {
         let _ = doc.set_cookie(&format!(
@@ -99,6 +111,9 @@ fn write_theme_cookie(theme: Theme) {
         ));
     }
 }
+
+#[cfg(not(feature = "hydrate"))]
+fn write_theme_cookie(_theme: Theme) {}
 
 #[component]
 fn HomePage() -> impl IntoView {

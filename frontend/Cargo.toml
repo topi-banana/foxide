@@ -10,17 +10,18 @@ crate-type = ["cdylib", "rlib"]
 leptos = { workspace = true }
 leptos_meta = { workspace = true }
 leptos_router = { workspace = true }
-wasm-bindgen = { workspace = true }
-console_error_panic_hook = { workspace = true }
-gloo-net = { workspace = true }
-web-sys = { version = "0.3", features = ["Window", "Location", "WebSocket", "MessageEvent", "BinaryType", "Document", "HtmlDocument"] }
-js-sys = { version = "0.3" }
+wasm-bindgen = { workspace = true, optional = true }
+console_error_panic_hook = { workspace = true, optional = true }
+web-sys = { version = "0.3", optional = true, features = ["HtmlDocument"] }
 bincode = { workspace = true }
 strum = { workspace = true }
 filebrowser-types = { workspace = true }
 
 [features]
 hydrate = [
+    "dep:wasm-bindgen",
+    "dep:console_error_panic_hook",
+    "dep:web-sys",
     "leptos/hydrate",
 ]
 ssr = [
