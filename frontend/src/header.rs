@@ -98,9 +98,7 @@ fn connect_ws(set_user: WriteSignal<Option<String>>) {
     let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
         if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
             let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
-            if let Ok((msg, _)) =
-                bincode::decode_from_slice::<ServerMsg, _>(&bytes, bincode::config::standard())
-            {
+            if let Ok(msg) = wincode::deserialize::<ServerMsg>(&bytes) {
                 match msg {
                     ServerMsg::Hello { username } => set_user.set(Some(username)),
                     ServerMsg::Unauthenticated => set_user.set(None),

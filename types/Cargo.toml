@@ -4,4 +4,4 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-bincode = { workspace = true }
+wincode = { workspace = true }

@@ -1,6 +1,6 @@
-use bincode::{Decode, Encode};
+use wincode::{SchemaRead, SchemaWrite};
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
 pub enum ServerMsg {
     Hello { username: String },
     Unauthenticated,

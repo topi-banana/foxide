@@ -40,7 +40,7 @@ async fn handle_socket(mut socket: WebSocket, user: Option<User>) {
         },
         None => ServerMsg::Unauthenticated,
     };
-    let bytes = bincode::encode_to_vec(&msg, bincode::config::standard()).unwrap();
+    let bytes = wincode::serialize(&msg).unwrap();
     if socket.send(Message::Binary(bytes.into())).await.is_err() {
         return;
     }

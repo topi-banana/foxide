@@ -35,7 +35,7 @@ rand = { version = "0.10" }
 sha2 = { version = "0.11" }
 url = { version = "2.5", features = ["serde"] }
 gloo-net = { version = "0.6", features = ["http", "json"] }
-bincode = { version = "2" }
+wincode = { version = "0.5", features = ["derive"] }
 strum = { version = "0.28", features = ["derive"] }
 
 [profile.wasm-release]
