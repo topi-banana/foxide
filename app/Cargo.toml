@@ -1,24 +1,24 @@
 [package]
+edition.workspace = true
 name = "filebrowser-app"
 version.workspace = true
-edition.workspace = true
 
 [dependencies]
+axum = { workspace = true, optional = true }
+filebrowser-backend = { workspace = true, optional = true }
+filebrowser-frontend = { workspace = true }
 leptos = { workspace = true }
 leptos_axum = { workspace = true, optional = true }
-axum = { workspace = true, optional = true }
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"], optional = true }
-filebrowser-frontend = { workspace = true }
-filebrowser-backend = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
+tower-http = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
-tower-http = { workspace = true, optional = true }
 
 [dev-dependencies]
-url = { workspace = true }
 reqwest = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+url = { workspace = true }
 
 [package.metadata.cargo-machete]
 ignored = ["filebrowser-frontend", "leptos_axum", "tower-http"]
@@ -27,12 +27,12 @@ ignored = ["filebrowser-frontend", "leptos_axum", "tower-http"]
 default = []
 ssr = [
     "dep:axum",
-    "dep:tokio",
-    "dep:leptos_axum",
-    "leptos/ssr",
-    "filebrowser-frontend/ssr",
     "dep:filebrowser-backend",
+    "dep:leptos_axum",
+    "dep:tokio",
+    "dep:tower-http",
     "dep:tracing",
     "dep:tracing-subscriber",
-    "dep:tower-http",
+    "filebrowser-frontend/ssr",
+    "leptos/ssr",
 ]

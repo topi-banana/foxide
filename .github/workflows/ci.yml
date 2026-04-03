@@ -19,6 +19,14 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
 
+  taplo:
+    name: TOML Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: cargo install taplo-cli --locked
+      - run: taplo fmt --check
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
