@@ -8,12 +8,12 @@ Leptos (SSR + Hydration) と Axum で構築されたファイルブラウザ。
 
 Rust 2024 edition のワークスペースで、4つのクレートから構成される:
 
-| ディレクトリ | クレート | 役割 |
-|-----------|-------|------|
-| `app/` | `filebrowser-app` | サーバー起動 (Axum + Leptos SSR) |
-| `frontend/` | `filebrowser-frontend` | UIコンポーネント、Router、hydration エントリ |
-| `backend/` | `filebrowser-backend` | APIエンドポイント、サーバーファンクション |
-| `types/` | `filebrowser-types` | 共有型定義 |
+| ディレクトリ | クレート               | 役割                                         |
+| ------------ | ---------------------- | -------------------------------------------- |
+| `app/`       | `filebrowser-app`      | サーバー起動 (Axum + Leptos SSR)             |
+| `frontend/`  | `filebrowser-frontend` | UIコンポーネント、Router、hydration エントリ |
+| `backend/`   | `filebrowser-backend`  | APIエンドポイント、サーバーファンクション    |
+| `types/`     | `filebrowser-types`    | 共有型定義                                   |
 
 ## 前提条件
 
@@ -34,6 +34,9 @@ cargo leptos watch
 cargo fmt --all -- --check
 taplo fmt --check
 
+# 未使用 allow 検出
+cargo　unused-allow --all-targets -- --workspace
+
 # Lint (SSR側)
 cargo clippy -p filebrowser-app --features ssr
 
@@ -53,6 +56,7 @@ cargo test -p filebrowser-types
 ```bash
 cargo fmt --all -- --check \
   && taplo fmt --check \
+  && cargo　unused-allow --all-targets -- --workspace \
   && cargo clippy -p filebrowser-app --features ssr \
   && cargo clippy -p filebrowser-frontend --features hydrate \
   && cargo test -p filebrowser-app --features ssr \
@@ -66,6 +70,7 @@ GitHub Actions が全ブランチへの push / PR ごとに以下を実行:
 
 - **Format** — `cargo fmt --check`
 - **Clippy** — SSR と hydrate 両方の lint
+- **Unused Allow** — 未使用 `#[allow(...)]` の検出 (`cargo-unused-allow`)
 - **Test** — サーバーを起動してAPIエンドポイントを検証する統合テスト
 - **Machete** — 未使用依存の検出 (`cargo-machete`)
 - **Build** — フル SSR ビルド
