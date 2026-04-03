@@ -32,6 +32,7 @@ cargo leptos watch
 
 # フォーマットチェック
 cargo fmt --all -- --check
+taplo fmt --check
 
 # Lint (SSR側)
 cargo clippy -p filebrowser-app --features ssr
@@ -51,6 +52,7 @@ cargo test -p filebrowser-types
 
 ```bash
 cargo fmt --all -- --check \
+  && taplo fmt --check \
   && cargo clippy -p filebrowser-app --features ssr \
   && cargo clippy -p filebrowser-frontend --features hydrate \
   && cargo test -p filebrowser-app --features ssr \
