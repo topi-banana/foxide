@@ -35,7 +35,7 @@ cargo fmt --all -- --check
 taplo fmt --check
 
 # 未使用 allow 検出
-cargo　unused-allow --all-targets -- --workspace
+cargo-unused-allow --all-targets -- --workspace
 
 # Lint (SSR側)
 cargo clippy -p filebrowser-app --features ssr
@@ -56,7 +56,7 @@ cargo test -p filebrowser-types
 ```bash
 cargo fmt --all -- --check \
   && taplo fmt --check \
-  && cargo　unused-allow --all-targets -- --workspace \
+  && cargo-unused-allow --all-targets -- --workspace \
   && cargo clippy -p filebrowser-app --features ssr \
   && cargo clippy -p filebrowser-frontend --features hydrate \
   && cargo test -p filebrowser-app --features ssr \
