@@ -9,7 +9,7 @@ use tower_cookies::Cookies;
 
 use crate::AppState;
 use crate::login::User;
-use filebrowser_types::ServerMsg;
+use filebrowser_types::{ClientMsg, ServerMsg};
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/", get(ws_handler))
@@ -21,7 +21,7 @@ async fn ws_handler(
     cookies: Cookies,
 ) -> impl IntoResponse {
     let user = authenticate(&state, &cookies).await;
-    ws.on_upgrade(move |socket| handle_socket(socket, user))
+    ws.on_upgrade(move |socket| handle_socket(socket, user, state))
 }
 
 async fn authenticate(state: &AppState, cookies: &Cookies) -> Option<User> {
@@ -33,7 +33,8 @@ async fn authenticate(state: &AppState, cookies: &Cookies) -> Option<User> {
     Some(user)
 }
 
-async fn handle_socket(mut socket: WebSocket, user: Option<User>) {
+async fn handle_socket(mut socket: WebSocket, user: Option<User>, state: AppState) {
+    // Send initial auth status
     let msg = match &user {
         Some(u) => ServerMsg::Hello {
             username: u.username.clone(),
@@ -45,8 +46,28 @@ async fn handle_socket(mut socket: WebSocket, user: Option<User>) {
         return;
     }
 
+    // Process incoming requests
     while let Some(Ok(msg)) = socket.recv().await {
-        if matches!(msg, Message::Close(_)) {
+        let Message::Binary(data) = msg else {
+            if matches!(msg, Message::Close(_)) {
+                break;
+            }
+            continue;
+        };
+
+        let Ok(client_msg) = wincode::deserialize::<ClientMsg>(&data) else {
+            continue;
+        };
+
+        let response = match client_msg {
+            ClientMsg::Admin(action) => match &user {
+                Some(user) => ServerMsg::Admin(crate::admin::handle(&state, user, action).await),
+                None => ServerMsg::Unauthenticated,
+            },
+        };
+
+        let bytes = wincode::serialize(&response).unwrap();
+        if socket.send(Message::Binary(bytes.into())).await.is_err() {
             break;
         }
     }

@@ -1,3 +1,4 @@
+mod admin;
 mod header;
 
 use leptos::prelude::*;
@@ -5,6 +6,7 @@ use leptos_meta::*;
 use leptos_router::components::*;
 use leptos_router::path;
 
+use admin::AdminPage;
 use header::{Header, Theme};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -57,6 +59,7 @@ pub fn App() -> impl IntoView {
                         <li><a>"Documents"</a></li>
                         <li><a>"Photos"</a></li>
                         <li><a>"Settings"</a></li>
+                        <li><a href="/admin">"Admin"</a></li>
                     </ul>
                 </nav>
             </aside>
@@ -70,6 +73,7 @@ pub fn App() -> impl IntoView {
                     <Router>
                         <Routes fallback=|| "Not found.">
                             <Route path=path!("/") view=HomePage/>
+                            <Route path=path!("/admin") view=AdminPage/>
                         </Routes>
                     </Router>
                 </main>

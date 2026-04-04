@@ -102,6 +102,7 @@ fn connect_ws(set_user: WriteSignal<Option<String>>) {
                 match msg {
                     ServerMsg::Hello { username } => set_user.set(Some(username)),
                     ServerMsg::Unauthenticated => set_user.set(None),
+                    _ => {}
                 }
             }
         }

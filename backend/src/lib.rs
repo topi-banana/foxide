@@ -1,3 +1,4 @@
+mod admin;
 mod health;
 mod login;
 mod logout;
@@ -15,6 +16,7 @@ use tower_http::trace::TraceLayer;
 
 use filebrowser_frontend::{App, shell};
 
+use crate::admin::AdminSettings;
 use crate::login::{TokenStorage, UserStorage};
 
 /// Application-wide shared state.
@@ -28,6 +30,7 @@ pub struct AppState {
     pub redirect_uri: url::Url,
 
     pub bot_http: Arc<Http>,
+    pub admin_settings: Arc<AdminSettings>,
     pub token_storage: Arc<TokenStorage>,
     pub user_storage: Arc<UserStorage>,
 }
@@ -48,6 +51,9 @@ impl AppState {
             guild_id,
             redirect_uri,
             bot_http: Arc::new(Http::new(bot_token)),
+            admin_settings: Arc::new(
+                AdminSettings::open("data/admin").expect("failed to open admin settings"),
+            ),
             token_storage: Arc::new(TokenStorage::new()),
             user_storage: Arc::new(
                 UserStorage::open("data/users").expect("failed to open user storage"),
