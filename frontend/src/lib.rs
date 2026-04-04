@@ -55,7 +55,7 @@ pub fn App() -> impl IntoView {
             >
                 <nav class="w-64 h-full p-4">
                     <ul class="menu">
-                        <li><a class="active">"Home"</a></li>
+                        <li><a href="/">"Home"</a></li>
                         <li><a>"Documents"</a></li>
                         <li><a>"Photos"</a></li>
                         <li><a>"Settings"</a></li>
