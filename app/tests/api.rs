@@ -14,6 +14,7 @@ async fn spawn_server() -> SocketAddr {
         String::new(),
         0,
         url::Url::parse("http://localhost").unwrap(),
+        "",
     );
     let app = build_app(state);
 
