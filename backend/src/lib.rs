@@ -18,6 +18,7 @@ use filebrowser_frontend::{App, shell};
 
 use crate::admin::AdminSettings;
 use crate::login::{TokenStorage, UserStorage};
+use crate::ws::SocketStorage;
 
 /// Application-wide shared state.
 #[derive(Clone)]
@@ -31,6 +32,7 @@ pub struct AppState {
 
     pub bot_http: Arc<Http>,
     pub admin_settings: Arc<AdminSettings>,
+    pub socket_storage: Arc<SocketStorage>,
     pub token_storage: Arc<TokenStorage>,
     pub user_storage: Arc<UserStorage>,
 }
@@ -54,6 +56,7 @@ impl AppState {
             admin_settings: Arc::new(
                 AdminSettings::open("data/admin").expect("failed to open admin settings"),
             ),
+            socket_storage: Arc::new(SocketStorage::new()),
             token_storage: Arc::new(TokenStorage::new()),
             user_storage: Arc::new(
                 UserStorage::open("data/users").expect("failed to open user storage"),

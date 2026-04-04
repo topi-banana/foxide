@@ -13,6 +13,7 @@ filebrowser-app = { path = "app" }
 filebrowser-backend = { path = "backend" }
 filebrowser-frontend = { path = "frontend" }
 filebrowser-types = { path = "types" }
+futures = { version = "0.3" }
 gloo-net = { version = "0.6", features = ["http", "json"] }
 leptos = { version = "0.8" }
 leptos_axum = { version = "0.8" }

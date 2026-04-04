@@ -830,6 +830,7 @@ dependencies = [
  "axum",
  "filebrowser-frontend",
  "filebrowser-types",
+ "futures",
  "leptos",
  "leptos_axum",
  "rand 0.10.0",

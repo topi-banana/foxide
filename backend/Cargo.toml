@@ -10,6 +10,7 @@ path = "src/lib.rs"
 axum = { workspace = true }
 filebrowser-frontend = { workspace = true, features = ["ssr"] }
 filebrowser-types = { workspace = true }
+futures = { workspace = true }
 leptos = { workspace = true, features = ["ssr"] }
 leptos_axum = { workspace = true }
 rand = { workspace = true }
