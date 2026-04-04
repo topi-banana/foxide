@@ -35,7 +35,8 @@ impl AdminSettings {
 /// All admin actions use the same permission check.
 async fn is_authorized(state: &AppState, user: &User, _action: &AdminAction) -> bool {
     let Some(admin_role_id) = state.admin_settings.get_admin_role_id().unwrap_or(None) else {
-        return false;
+        // Not configured yet — allow any authenticated user
+        return true;
     };
 
     let guild_id = GuildId::new(state.guild_id);
