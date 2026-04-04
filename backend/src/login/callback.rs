@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use serde::{Deserialize, Serialize};
+use serenity::http::Http;
 use tower_cookies::{
     Cookie, Cookies,
     cookie::time::{Duration, OffsetDateTime},
@@ -18,7 +19,7 @@ pub struct CallbackParams {
 }
 
 #[derive(Debug, Serialize)]
-struct RequestData<'a> {
+struct TokenRequestData<'a> {
     client_id: u64,
     client_secret: &'a str,
     grant_type: &'a str,
@@ -28,36 +29,12 @@ struct RequestData<'a> {
 
 #[derive(Debug, Deserialize)]
 #[expect(dead_code)]
-pub struct OauthTokenResponse {
+struct OauthTokenResponse {
     access_token: String,
     token_type: String,
     expires_in: u64,
     refresh_token: String,
     scope: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[expect(dead_code)]
-struct UserDataResponse {
-    id: String,
-    username: String,
-    discriminator: String,
-    global_name: Option<String>,
-    avatar: Option<String>,
-    bot: Option<bool>,
-    system: Option<bool>,
-    mfa_enabled: Option<bool>,
-    banner: Option<String>,
-    accent_color: Option<u32>,
-    locale: Option<String>,
-    verified: Option<bool>,
-    email: Option<String>,
-    flags: Option<u64>,
-    premium_type: Option<u8>,
-    public_flags: Option<u64>,
-    avatar_decoration_data: Option<serde_json::Value>,
-    collectibles: Option<serde_json::Value>,
-    primary_guild: Option<serde_json::Value>,
 }
 
 pub async fn login_callback(
@@ -67,11 +44,8 @@ pub async fn login_callback(
 ) -> Result<impl IntoResponse, StatusCode> {
     if let Some(cookie) = cookies.get("auth-state") {
         if cookie.value() == params.state {
-            let client = reqwest::Client::new();
-
             let oauth_token: OauthTokenResponse = {
-                let base_url = url::Url::parse("https://discord.com/api/oauth2/token").unwrap();
-                let form = RequestData {
+                let form = TokenRequestData {
                     client_id: state.client_id,
                     client_secret: &state.client_secret,
                     grant_type: "authorization_code",
@@ -79,50 +53,38 @@ pub async fn login_callback(
                     redirect_uri: &state.redirect_uri,
                 };
 
-                let response = client
-                    .post(base_url)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
+                reqwest::Client::new()
+                    .post("https://discord.com/api/oauth2/token")
                     .form(&form)
                     .send()
                     .await
                     .map_err(|e| {
                         tracing::error!("failed to fetch OauthToken: {e:#?}");
                         StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
-                response.json().await.map_err(|e| {
-                    tracing::error!("failed to parse OauthToken response JSON: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?
-            };
-
-            let userdata: UserDataResponse = {
-                let base_url = url::Url::parse("https://discord.com/api/users/@me").unwrap();
-                let response = client
-                    .get(base_url)
-                    .header(
-                        "Authorization",
-                        format!("Bearer {}", oauth_token.access_token),
-                    )
-                    .send()
+                    })?
+                    .json()
                     .await
                     .map_err(|e| {
-                        tracing::error!("failed to fetch UserData: {e:#?}");
+                        tracing::error!("failed to parse OauthToken response JSON: {e}");
                         StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
-
-                response.json().await.map_err(|e| {
-                    tracing::error!("failed to parse UserData response JSON: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?
+                    })?
             };
+
+            let http = Http::new(&format!("Bearer {}", oauth_token.access_token));
+            let current_user = http.get_current_user().await.map_err(|e| {
+                tracing::error!("failed to fetch current user: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
 
             let user = User {
-                user_id: userdata.id.parse::<u64>().unwrap(),
-                username: userdata.username,
+                user_id: current_user.id.get(),
+                username: current_user.name.to_owned(),
             };
 
-            state.user_storage.insert(user.clone()).await;
+            state
+                .user_storage
+                .insert(&user)
+                .expect("failed to insert user");
 
             let session_token = state.token_storage.create(user).await;
 

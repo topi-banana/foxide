@@ -9,6 +9,7 @@ use axum::Router;
 use axum::extract::FromRef;
 use leptos::prelude::*;
 use leptos_axum::{LeptosRoutes, generate_route_list};
+use serenity::http::Http;
 use tower_cookies::CookieManagerLayer;
 use tower_http::trace::TraceLayer;
 
@@ -26,6 +27,7 @@ pub struct AppState {
     pub guild_id: u64,
     pub redirect_uri: url::Url,
 
+    pub bot_http: Arc<Http>,
     pub token_storage: Arc<TokenStorage>,
     pub user_storage: Arc<UserStorage>,
 }
@@ -37,6 +39,7 @@ impl AppState {
         client_secret: String,
         guild_id: u64,
         redirect_uri: url::Url,
+        bot_token: &str,
     ) -> Self {
         Self {
             leptos_options,
@@ -44,8 +47,11 @@ impl AppState {
             client_secret,
             guild_id,
             redirect_uri,
+            bot_http: Arc::new(Http::new(bot_token)),
             token_storage: Arc::new(TokenStorage::new()),
-            user_storage: Arc::new(UserStorage::new()),
+            user_storage: Arc::new(
+                UserStorage::open("data/users").expect("failed to open user storage"),
+            ),
         }
     }
 }
@@ -86,6 +92,10 @@ pub async fn run() {
             tracing::error!("REDIRECT_URI is not set or invalid, using {default}");
             url::Url::parse(&default).unwrap()
         });
+    let bot_token = std::env::var("BOT_TOKEN").unwrap_or_else(|_| {
+        tracing::error!("BOT_TOKEN is not set, using empty string");
+        String::new()
+    });
 
     let state = AppState::new(
         leptos_options,
@@ -93,6 +103,7 @@ pub async fn run() {
         client_secret,
         guild_id,
         redirect_uri,
+        &bot_token,
     );
     let app = build_app(state);
 

@@ -3,11 +3,13 @@ mod redirect;
 
 use std::collections::BTreeMap;
 use std::collections::btree_map::Entry;
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use axum::Router;
 use axum::routing::get;
 use rand::distr::{Alphanumeric, SampleString};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
@@ -19,25 +21,34 @@ pub fn router() -> Router<AppState> {
         .route("/callback", get(callback::login_callback))
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct User {
     pub user_id: u64,
     pub username: String,
 }
 
 pub struct UserStorage {
-    storage: Mutex<BTreeMap<u64, User>>,
+    db: sled::Db,
 }
 
 impl UserStorage {
-    pub fn new() -> Self {
-        Self {
-            storage: Mutex::new(BTreeMap::new()),
-        }
+    pub fn open(path: impl AsRef<Path>) -> sled::Result<Self> {
+        let db = sled::open(path)?;
+        Ok(Self { db })
     }
 
-    pub async fn insert(&self, user: User) {
-        self.storage.lock().await.insert(user.user_id, user);
+    pub fn insert(&self, user: &User) -> sled::Result<()> {
+        let value = serde_json::to_vec(user).expect("failed to serialize User");
+        self.db.insert(user.user_id.to_be_bytes(), value)?;
+        Ok(())
+    }
+
+    pub fn get(&self, user_id: u64) -> sled::Result<Option<User>> {
+        let Some(bytes) = self.db.get(user_id.to_be_bytes())? else {
+            return Ok(None);
+        };
+        let user: User = serde_json::from_slice(&bytes).expect("failed to deserialize User");
+        Ok(Some(user))
     }
 }
 
