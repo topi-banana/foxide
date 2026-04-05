@@ -35,12 +35,16 @@ pub fn App() -> impl IntoView {
     let (theme, set_theme) = signal(Theme::Light);
 
     Effect::new(move |prev: Option<()>| {
-        if prev.is_none()
-            && let Some(t) = read_theme_cookie()
-        {
-            set_theme.set(t);
+        if prev.is_none() {
+            if let Some(t) = read_theme_cookie() {
+                set_theme.set(t);
+            }
+            if let Some(s) = read_sidebar_cookie() {
+                set_sidebar_open.set(s);
+            }
         }
         write_theme_cookie(theme.get());
+        write_sidebar_cookie(sidebar_open.get());
     });
 
     view! {
@@ -119,6 +123,34 @@ fn write_theme_cookie(theme: Theme) {
 
 #[cfg(not(feature = "hydrate"))]
 fn write_theme_cookie(_theme: Theme) {}
+
+#[cfg(feature = "hydrate")]
+fn read_sidebar_cookie() -> Option<bool> {
+    let cookies = html_document()?.cookie().ok()?;
+    cookies
+        .split(';')
+        .filter_map(|c| c.trim().strip_prefix("sidebar="))
+        .next()?
+        .parse()
+        .ok()
+}
+
+#[cfg(not(feature = "hydrate"))]
+fn read_sidebar_cookie() -> Option<bool> {
+    None
+}
+
+#[cfg(feature = "hydrate")]
+fn write_sidebar_cookie(open: bool) {
+    if let Some(doc) = html_document() {
+        let _ = doc.set_cookie(&format!(
+            "sidebar={open};path=/;max-age=31536000;SameSite=Lax"
+        ));
+    }
+}
+
+#[cfg(not(feature = "hydrate"))]
+fn write_sidebar_cookie(_open: bool) {}
 
 #[component]
 fn HomePage() -> impl IntoView {
