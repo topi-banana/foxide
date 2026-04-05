@@ -2,6 +2,7 @@ mod admin;
 mod health;
 mod login;
 mod logout;
+pub mod volume;
 mod ws;
 
 use std::sync::Arc;
@@ -18,6 +19,7 @@ use filebrowser_frontend::{App, shell};
 
 use crate::admin::AdminSettings;
 use crate::login::{TokenStorage, UserStorage};
+use crate::volume::VolumeStorage;
 use crate::ws::SocketStorage;
 
 /// Application-wide shared state.
@@ -35,6 +37,7 @@ pub struct AppState {
     pub socket_storage: Arc<SocketStorage>,
     pub token_storage: Arc<TokenStorage>,
     pub user_storage: Arc<UserStorage>,
+    pub volume_storage: Arc<VolumeStorage>,
 }
 
 impl AppState {
@@ -62,6 +65,9 @@ impl AppState {
             ),
             user_storage: Arc::new(
                 UserStorage::open("data/users").expect("failed to open user storage"),
+            ),
+            volume_storage: Arc::new(
+                VolumeStorage::open("data/volumes").expect("failed to open volume storage"),
             ),
         }
     }

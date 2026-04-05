@@ -10,8 +10,19 @@ pub enum ClientMsg {
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
 pub enum AdminAction {
     GetRoles,
-    SetAdminRole { role_id: u64 },
+    SetAdminRole {
+        role_id: u64,
+    },
     GetTokens,
+    GetVolumes,
+    AddVolume {
+        name: String,
+        path: String,
+        role_id: u64,
+    },
+    RemoveVolume {
+        id: u64,
+    },
 }
 
 // --- Server → Client ---
@@ -35,6 +46,15 @@ pub enum AdminResponse {
     Tokens {
         tokens: Vec<TokenInfo>,
     },
+    Volumes {
+        volumes: Vec<VolumeInfo>,
+    },
+    VolumeAdded {
+        volume: VolumeInfo,
+    },
+    VolumeRemoved {
+        id: u64,
+    },
     Error {
         message: String,
     },
@@ -52,4 +72,12 @@ pub struct TokenInfo {
     pub user_id: u64,
     pub username: String,
     pub expires: String,
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub struct VolumeInfo {
+    pub id: u64,
+    pub name: String,
+    pub path: String,
+    pub role_id: u64,
 }

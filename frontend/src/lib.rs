@@ -6,7 +6,7 @@ use leptos_meta::*;
 use leptos_router::components::*;
 use leptos_router::path;
 
-use admin::{AdminPage, AdminTokensPage};
+use admin::{AdminPage, AdminTokensPage, AdminVolumesPage};
 use header::{Header, Theme};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -79,6 +79,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/") view=HomePage/>
                             <Route path=path!("/admin") view=AdminPage/>
                             <Route path=path!("/admin/tokens") view=AdminTokensPage/>
+                            <Route path=path!("/admin/volumes") view=AdminVolumesPage/>
                         </Routes>
                     </Router>
                 </main>

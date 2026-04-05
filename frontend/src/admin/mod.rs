@@ -1,6 +1,8 @@
 mod tokens;
+mod volumes;
 
 pub use tokens::AdminTokensPage;
+pub use volumes::AdminVolumesPage;
 
 use leptos::prelude::*;
 
@@ -169,6 +171,7 @@ pub fn AdminPage() -> impl IntoView {
                     <h2 class="card-title">"Management"</h2>
                     <ul class="menu">
                         <li><a href="/admin/tokens">"Active Sessions"</a></li>
+                        <li><a href="/admin/volumes">"Volumes"</a></li>
                     </ul>
                 </div>
             </div>

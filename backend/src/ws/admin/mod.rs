@@ -1,5 +1,6 @@
 mod roles;
 mod tokens;
+mod volumes;
 
 use serenity::all::{GuildId, UserId};
 
@@ -38,5 +39,12 @@ pub async fn handle(state: &AppState, user: &User, writer: &SocketWriter, action
         AdminAction::GetRoles => roles::get_roles(state, writer).await,
         AdminAction::SetAdminRole { role_id } => roles::set_admin_role(state, writer, role_id),
         AdminAction::GetTokens => tokens::get_tokens(state, writer),
+        AdminAction::GetVolumes => volumes::get_volumes(state, writer),
+        AdminAction::AddVolume {
+            name,
+            path,
+            role_id,
+        } => volumes::add_volume(state, writer, name, path, role_id),
+        AdminAction::RemoveVolume { id } => volumes::remove_volume(state, writer, id),
     }
 }
