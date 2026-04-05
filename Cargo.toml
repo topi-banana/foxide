@@ -8,6 +8,7 @@ resolver = "3"
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["ws"] }
+chrono = { version = "0.4", features = ["serde"] }
 console_error_panic_hook = { version = "0.1" }
 filebrowser-app = { path = "app" }
 filebrowser-backend = { path = "backend" }
@@ -25,7 +26,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 serenity = { version = "0.12" }
 sha2 = { version = "0.11" }
-chrono = { version = "0.4", features = ["serde"] }
 sled = { version = "0.34" }
 strum = { version = "0.28", features = ["derive"] }
 tokio = { version = "1" }
