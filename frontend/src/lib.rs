@@ -6,7 +6,7 @@ use leptos_meta::*;
 use leptos_router::components::*;
 use leptos_router::path;
 
-use admin::AdminPage;
+use admin::{AdminPage, AdminTokensPage};
 use header::{Header, Theme};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -74,6 +74,7 @@ pub fn App() -> impl IntoView {
                         <Routes fallback=|| "Not found.">
                             <Route path=path!("/") view=HomePage/>
                             <Route path=path!("/admin") view=AdminPage/>
+                            <Route path=path!("/admin/tokens") view=AdminTokensPage/>
                         </Routes>
                     </Router>
                 </main>

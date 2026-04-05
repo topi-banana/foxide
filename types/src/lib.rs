@@ -11,6 +11,7 @@ pub enum ClientMsg {
 pub enum AdminAction {
     GetRoles,
     SetAdminRole { role_id: u64 },
+    GetTokens,
 }
 
 // --- Server → Client ---
@@ -31,6 +32,9 @@ pub enum AdminResponse {
     AdminRoleUpdated {
         role_id: u64,
     },
+    Tokens {
+        tokens: Vec<TokenInfo>,
+    },
     Error {
         message: String,
     },
@@ -41,4 +45,11 @@ pub enum AdminResponse {
 pub struct RoleInfo {
     pub id: u64,
     pub name: String,
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub struct TokenInfo {
+    pub user_id: u64,
+    pub username: String,
+    pub expires: String,
 }

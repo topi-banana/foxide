@@ -93,6 +93,17 @@ impl TokenStorage {
         }
     }
 
+    pub fn list_all(&self) -> Vec<(DateTime<Utc>, User)> {
+        self.db
+            .iter()
+            .filter_map(|result| {
+                let (_, value) = result.ok()?;
+                let entry: TokenEntry = serde_json::from_slice(&value).ok()?;
+                Some((entry.expires, entry.user))
+            })
+            .collect()
+    }
+
     pub fn get(&self, session_token: &str) -> Option<(DateTime<Utc>, User)> {
         let id = Self::get_id_from_token(session_token);
         let bytes = self.db.get(id).expect("failed to get token")?;

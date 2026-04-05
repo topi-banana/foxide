@@ -1,3 +1,7 @@
+mod tokens;
+
+pub use tokens::AdminTokensPage;
+
 use leptos::prelude::*;
 
 #[cfg(feature = "hydrate")]
@@ -55,6 +59,7 @@ fn connect_admin_ws(
                         AdminResponse::Unauthorized => {
                             set_unauthorized.set(true);
                         }
+                        _ => {}
                     },
                     ServerMsg::Unauthenticated => {
                         set_unauthorized.set(true);
@@ -156,6 +161,15 @@ pub fn AdminPage() -> impl IntoView {
                             }).collect_view()}
                         </select>
                     </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-200 shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title">"Management"</h2>
+                    <ul class="menu">
+                        <li><a href="/admin/tokens">"Active Sessions"</a></li>
+                    </ul>
                 </div>
             </div>
         </div>
