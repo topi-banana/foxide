@@ -86,7 +86,7 @@ pub async fn login_callback(
                 .insert(&user)
                 .expect("failed to insert user");
 
-            let session_token = state.token_storage.create(user).await;
+            let session_token = state.token_storage.create(user);
 
             cookies.add(
                 Cookie::build(("auth-session", session_token))

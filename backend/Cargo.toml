@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 axum = { workspace = true }
+chrono = { workspace = true }
 filebrowser-frontend = { workspace = true, features = ["ssr"] }
 filebrowser-types = { workspace = true }
 futures = { workspace = true }

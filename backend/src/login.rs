@@ -1,17 +1,14 @@
 mod callback;
 mod redirect;
 
-use std::collections::BTreeMap;
-use std::collections::btree_map::Entry;
 use std::path::Path;
-use std::time::{Duration, Instant};
 
 use axum::Router;
 use axum::routing::get;
+use chrono::{DateTime, Days, Utc};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tokio::sync::Mutex;
 
 use crate::AppState;
 
@@ -53,42 +50,54 @@ impl UserStorage {
 }
 
 pub struct TokenStorage {
-    storage: Mutex<BTreeMap<[u8; 32], (Instant, User)>>,
+    db: sled::Db,
+}
+
+#[derive(Serialize, Deserialize)]
+struct TokenEntry {
+    expires: DateTime<Utc>,
+    user: User,
 }
 
 impl TokenStorage {
-    pub fn new() -> Self {
-        Self {
-            storage: Mutex::new(BTreeMap::new()),
-        }
+    pub fn open(path: impl AsRef<Path>) -> sled::Result<Self> {
+        let db = sled::open(path)?;
+        Ok(Self { db })
     }
-}
 
-impl TokenStorage {
     fn create_new_token() -> (String, [u8; 32]) {
         let token = Alphanumeric.sample_string(&mut rand::rng(), 32);
         let id = Self::get_id_from_token(&token);
         (token, id)
     }
+
     fn get_id_from_token(token: &str) -> [u8; 32] {
         let mut id = [0; 32];
         id.copy_from_slice(&Sha256::digest(token));
         id
     }
 
-    pub async fn create(&self, user: User) -> String {
+    pub fn create(&self, user: User) -> String {
         loop {
             let (token, id) = Self::create_new_token();
-            let mut storage = self.storage.lock().await;
-            if let Entry::Vacant(e) = storage.entry(id) {
-                e.insert((Instant::now() + Duration::from_hours(24 * 7), user));
-                break token;
+            if self.db.contains_key(id).expect("failed to check token") {
+                continue;
             }
+            let entry = TokenEntry {
+                expires: Utc::now() + Days::new(7),
+                user,
+            };
+            let value = serde_json::to_vec(&entry).expect("failed to serialize TokenEntry");
+            self.db.insert(id, value).expect("failed to insert token");
+            break token;
         }
     }
 
-    pub async fn get(&self, session_token: &str) -> Option<(Instant, User)> {
+    pub fn get(&self, session_token: &str) -> Option<(DateTime<Utc>, User)> {
         let id = Self::get_id_from_token(session_token);
-        self.storage.lock().await.get(&id).cloned()
+        let bytes = self.db.get(id).expect("failed to get token")?;
+        let entry: TokenEntry =
+            serde_json::from_slice(&bytes).expect("failed to deserialize TokenEntry");
+        Some((entry.expires, entry.user))
     }
 }

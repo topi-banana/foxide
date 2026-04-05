@@ -57,7 +57,9 @@ impl AppState {
                 AdminSettings::open("data/admin").expect("failed to open admin settings"),
             ),
             socket_storage: Arc::new(SocketStorage::new()),
-            token_storage: Arc::new(TokenStorage::new()),
+            token_storage: Arc::new(
+                TokenStorage::open("data/tokens").expect("failed to open token storage"),
+            ),
             user_storage: Arc::new(
                 UserStorage::open("data/users").expect("failed to open user storage"),
             ),

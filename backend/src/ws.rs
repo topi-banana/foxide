@@ -1,7 +1,7 @@
 mod admin;
 
 use std::collections::BTreeMap;
-use std::time::Instant;
+use chrono::Utc;
 
 use axum::Router;
 use axum::extract::State;
@@ -93,8 +93,8 @@ async fn ws_handler(
 
 async fn authenticate(state: &AppState, cookies: &Cookies) -> Option<User> {
     let session = cookies.get("auth-session")?;
-    let (expires, user) = state.token_storage.get(session.value()).await?;
-    if Instant::now() > expires {
+    let (expires, user) = state.token_storage.get(session.value())?;
+    if Utc::now() > expires {
         return None;
     }
     Some(user)
