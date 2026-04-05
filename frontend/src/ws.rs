@@ -109,10 +109,4 @@ impl WsCtx {
     pub fn set_on_admin(&self, handler: impl Fn(AdminResponse) + Send + Sync + 'static) {
         self.on_admin.set_value(Some(Arc::new(handler)));
     }
-
-    /// Remove the current admin callback (called in `on_cleanup`).
-    #[cfg(feature = "hydrate")]
-    pub fn clear_on_admin(&self) {
-        self.on_admin.set_value(None);
-    }
 }

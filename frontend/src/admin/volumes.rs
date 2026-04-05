@@ -67,7 +67,6 @@ pub fn AdminVolumesPage() -> impl IntoView {
             }
             _ => {}
         });
-        on_cleanup(move || ws.clear_on_admin());
     }
 
     Effect::new(move |_| {
