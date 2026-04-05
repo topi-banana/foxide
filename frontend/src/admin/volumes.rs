@@ -1,8 +1,11 @@
 use leptos::prelude::*;
 
+use super::RoleSelector;
+
 #[cfg(feature = "hydrate")]
 fn connect_volumes_ws(
     set_volumes: WriteSignal<Vec<(u64, String, String, u64)>>,
+    set_roles: WriteSignal<Vec<(u64, String)>>,
     set_error: WriteSignal<Option<String>>,
     set_unauthorized: WriteSignal<bool>,
     ws_handle: StoredValue<Option<web_sys::WebSocket>>,
@@ -21,9 +24,10 @@ fn connect_volumes_ws(
 
     let ws_clone = ws.clone();
     let onopen = Closure::<dyn FnMut()>::new(move || {
-        let msg = ClientMsg::Admin(AdminAction::GetVolumes);
-        let bytes = wincode::serialize(&msg).unwrap();
-        let _ = ws_clone.send_with_u8_array(&bytes);
+        let get_volumes = ClientMsg::Admin(AdminAction::GetVolumes);
+        let _ = ws_clone.send_with_u8_array(&wincode::serialize(&get_volumes).unwrap());
+        let get_roles = ClientMsg::Admin(AdminAction::GetRoles);
+        let _ = ws_clone.send_with_u8_array(&wincode::serialize(&get_roles).unwrap());
     });
     ws.set_onopen(Some(onopen.as_ref().unchecked_ref()));
     onopen.forget();
@@ -43,6 +47,9 @@ fn connect_volumes_ws(
                             );
                             set_error.set(None);
                             set_unauthorized.set(false);
+                        }
+                        AdminResponse::Roles { roles, .. } => {
+                            set_roles.set(roles.into_iter().map(|r| (r.id, r.name)).collect());
                         }
                         AdminResponse::VolumeAdded { volume } => {
                             set_volumes.update(|vols| {
@@ -97,22 +104,24 @@ fn send_action(
 #[component]
 pub fn AdminVolumesPage() -> impl IntoView {
     let (volumes, set_volumes) = signal(Vec::<(u64, String, String, u64)>::new());
+    let (roles, set_roles) = signal(Vec::<(u64, String)>::new());
     let (error, set_error) = signal(None::<String>);
     let (unauthorized, set_unauthorized) = signal(false);
 
     // Form fields
     let (name, set_name) = signal(String::new());
     let (path, set_path) = signal(String::new());
-    let (role_id, set_role_id) = signal(String::new());
+    let (selected_role, set_selected_role) = signal(None::<u64>);
 
     #[cfg(not(feature = "hydrate"))]
     let _ = (
         set_volumes,
+        set_roles,
         set_error,
         set_unauthorized,
         set_name,
         set_path,
-        set_role_id,
+        set_selected_role,
     );
 
     #[cfg(feature = "hydrate")]
@@ -120,14 +129,30 @@ pub fn AdminVolumesPage() -> impl IntoView {
 
     #[cfg(feature = "hydrate")]
     Effect::new(move |_| {
-        connect_volumes_ws(set_volumes, set_error, set_unauthorized, ws_handle);
+        connect_volumes_ws(
+            set_volumes,
+            set_roles,
+            set_error,
+            set_unauthorized,
+            ws_handle,
+        );
     });
 
     let add_disabled = move || {
         unauthorized.get()
             || name.get().is_empty()
             || path.get().is_empty()
-            || role_id.get().parse::<u64>().is_err()
+            || selected_role.get().is_none()
+    };
+
+    // Resolve role_id -> role name using the roles list
+    let role_name = move |role_id: u64| {
+        roles
+            .get()
+            .iter()
+            .find(|(id, _)| *id == role_id)
+            .map(|(_, n)| n.clone())
+            .unwrap_or_else(|| role_id.to_string())
     };
 
     view! {
@@ -180,17 +205,14 @@ pub fn AdminVolumesPage() -> impl IntoView {
                             />
                         </div>
                         <div class="form-control">
-                            <label class="label"><span class="label-text">"Discord Role ID"</span></label>
-                            <input
-                                type="text"
-                                class="input input-bordered w-full"
-                                placeholder="123456789"
-                                prop:value=move || role_id.get()
-                                on:input=move |ev| {
-                                    let _v = event_target_value(&ev);
-                                    #[cfg(feature = "hydrate")]
-                                    set_role_id.set(_v);
+                            <label class="label"><span class="label-text">"Discord Role"</span></label>
+                            <RoleSelector
+                                roles=roles
+                                selected=Signal::derive(move || selected_role.get())
+                                on_select=move |role_id| {
+                                    set_selected_role.set(Some(role_id));
                                 }
+                                disabled=Signal::derive(move || unauthorized.get())
                             />
                         </div>
                     </div>
@@ -203,7 +225,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                 {
                                     let n = name.get_untracked();
                                     let p = path.get_untracked();
-                                    if let Ok(rid) = role_id.get_untracked().parse::<u64>() {
+                                    if let Some(rid) = selected_role.get_untracked() {
                                         send_action(ws_handle, filebrowser_types::AdminAction::AddVolume {
                                             name: n,
                                             path: p,
@@ -211,7 +233,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                         });
                                         set_name.set(String::new());
                                         set_path.set(String::new());
-                                        set_role_id.set(String::new());
+                                        set_selected_role.set(None);
                                     }
                                 }
                             }
@@ -230,18 +252,19 @@ pub fn AdminVolumesPage() -> impl IntoView {
                             <th>"ID"</th>
                             <th>"Name"</th>
                             <th>"Host Path"</th>
-                            <th>"Role ID"</th>
+                            <th>"Role"</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {move || volumes.get().into_iter().map(|(id, vol_name, vol_path, vol_role_id)| {
+                            let rname = role_name(vol_role_id);
                             view! {
                                 <tr>
                                     <td>{id}</td>
                                     <td>{vol_name}</td>
                                     <td>{vol_path}</td>
-                                    <td>{vol_role_id}</td>
+                                    <td>{rname}</td>
                                     <td>
                                         <button
                                             class="btn btn-error btn-sm"

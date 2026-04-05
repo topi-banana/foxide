@@ -1,8 +1,11 @@
+mod role_selector;
 mod tokens;
 mod volumes;
 
 pub use tokens::AdminTokensPage;
 pub use volumes::AdminVolumesPage;
+
+use role_selector::RoleSelector;
 
 use leptos::prelude::*;
 
@@ -139,29 +142,15 @@ pub fn AdminPage() -> impl IntoView {
                     <p class="text-base-content/70">"Select which Discord role grants admin access."</p>
 
                     <div class="form-control w-full mt-4">
-                        <select
-                            class="select select-bordered w-full"
-                            prop:value=move || admin_role_id.get().map(|id| id.to_string()).unwrap_or_default()
-                            on:change=move |ev| {
-                                let _value = event_target_value(&ev);
+                        <RoleSelector
+                            roles=roles
+                            selected=Signal::derive(move || admin_role_id.get())
+                            on_select=move |_role_id| {
                                 #[cfg(feature = "hydrate")]
-                                if let Ok(role_id) = _value.parse::<u64>() {
-                                    send_action(ws_handle, filebrowser_types::AdminAction::SetAdminRole { role_id });
-                                }
+                                send_action(ws_handle, filebrowser_types::AdminAction::SetAdminRole { role_id: _role_id });
                             }
-                            disabled=move || unauthorized.get() || roles.get().is_empty()
-                        >
-                            <option value="" disabled selected=move || admin_role_id.get().is_none()>
-                                "Select a role..."
-                            </option>
-                            {move || roles.get().into_iter().map(|(id, name)| {
-                                let id_str = id.to_string();
-                                let selected = move || admin_role_id.get() == Some(id);
-                                view! {
-                                    <option value=id_str.clone() selected=selected>{name.clone()}</option>
-                                }
-                            }).collect_view()}
-                        </select>
+                            disabled=Signal::derive(move || unauthorized.get())
+                        />
                     </div>
                 </div>
             </div>
