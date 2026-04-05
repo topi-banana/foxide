@@ -14,6 +14,8 @@ use std::sync::Arc;
 pub struct WsCtx {
     /// Logged-in username.  `None` until `Hello` arrives (or if unauthenticated).
     pub username: RwSignal<Option<String>>,
+    /// Discord avatar URL.  `None` if unauthenticated or no avatar set.
+    pub avatar_url: RwSignal<Option<String>>,
     /// `true` once the server has replied with `Hello` or `Unauthenticated`.
     pub ready: RwSignal<bool>,
 
@@ -34,6 +36,7 @@ impl WsCtx {
     pub fn new() -> Self {
         Self {
             username: RwSignal::new(None),
+            avatar_url: RwSignal::new(None),
             ready: RwSignal::new(false),
             #[cfg(feature = "hydrate")]
             ws: StoredValue::new(None),
@@ -63,12 +66,17 @@ impl WsCtx {
                 let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
                 if let Ok(msg) = wincode::deserialize::<ServerMsg>(&bytes) {
                     match msg {
-                        ServerMsg::Hello { username } => {
+                        ServerMsg::Hello {
+                            username,
+                            avatar_url,
+                        } => {
                             ctx.username.set(Some(username));
+                            ctx.avatar_url.set(avatar_url);
                             ctx.ready.set(true);
                         }
                         ServerMsg::Unauthenticated => {
                             ctx.username.set(None);
+                            ctx.avatar_url.set(None);
                             ctx.ready.set(true);
                         }
                         ServerMsg::Admin(resp) => {

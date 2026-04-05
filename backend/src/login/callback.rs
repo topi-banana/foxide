@@ -79,6 +79,7 @@ pub async fn login_callback(
             let user = User {
                 user_id: current_user.id.get(),
                 username: current_user.name.to_owned(),
+                avatar_hash: current_user.avatar.map(|h| h.to_string()),
             };
 
             state

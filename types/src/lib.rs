@@ -29,7 +29,10 @@ pub enum AdminAction {
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
 pub enum ServerMsg {
-    Hello { username: String },
+    Hello {
+        username: String,
+        avatar_url: Option<String>,
+    },
     Unauthenticated,
     Admin(AdminResponse),
 }

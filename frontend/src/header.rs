@@ -85,16 +85,24 @@ fn ThemeSwitcher(theme: ReadSignal<Theme>, set_theme: WriteSignal<Theme>) -> imp
 fn UserMenu() -> impl IntoView {
     let ws = expect_context::<crate::ws::WsCtx>();
 
-    let user_icon = view! {
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-    };
-
     view! {
         <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
-                {user_icon}
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+                {move || {
+                    if let Some(url) = ws.avatar_url.get() {
+                        view! {
+                            <div class="w-8 rounded-full">
+                                <img src=url alt="avatar"/>
+                            </div>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        }.into_any()
+                    }
+                }}
             </div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow">
                 {move || {

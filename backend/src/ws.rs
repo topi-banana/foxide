@@ -107,6 +107,7 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
     let msg = match &user {
         Some(u) => ServerMsg::Hello {
             username: u.username.clone(),
+            avatar_url: u.avatar_url(),
         },
         None => ServerMsg::Unauthenticated,
     };

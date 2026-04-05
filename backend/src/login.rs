@@ -22,6 +22,17 @@ pub fn router() -> Router<AppState> {
 pub struct User {
     pub user_id: u64,
     pub username: String,
+    pub avatar_hash: Option<String>,
+}
+
+impl User {
+    pub fn avatar_url(&self) -> Option<String> {
+        let hash = self.avatar_hash.as_ref()?;
+        Some(format!(
+            "https://cdn.discordapp.com/avatars/{}/{hash}.png?size=128",
+            self.user_id
+        ))
+    }
 }
 
 pub struct UserStorage {
