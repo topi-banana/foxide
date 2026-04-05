@@ -1,108 +1,12 @@
 use leptos::prelude::*;
 
 use super::RoleSelector;
-
-#[cfg(feature = "hydrate")]
-fn connect_volumes_ws(
-    set_volumes: WriteSignal<Vec<(u64, String, String, u64)>>,
-    set_roles: WriteSignal<Vec<(u64, String)>>,
-    set_error: WriteSignal<Option<String>>,
-    set_unauthorized: WriteSignal<bool>,
-    ws_handle: StoredValue<Option<web_sys::WebSocket>>,
-) {
-    use filebrowser_types::{AdminAction, AdminResponse, ClientMsg, ServerMsg};
-    use wasm_bindgen::prelude::*;
-
-    let location = web_sys::window().unwrap().location();
-    let protocol = location.protocol().unwrap();
-    let host = location.host().unwrap();
-    let ws_protocol = if protocol == "https:" { "wss:" } else { "ws:" };
-    let url = format!("{ws_protocol}//{host}/ws");
-
-    let ws = web_sys::WebSocket::new(&url).unwrap();
-    ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-
-    let ws_clone = ws.clone();
-    let onopen = Closure::<dyn FnMut()>::new(move || {
-        let get_volumes = ClientMsg::Admin(AdminAction::GetVolumes);
-        let _ = ws_clone.send_with_u8_array(&wincode::serialize(&get_volumes).unwrap());
-        let get_roles = ClientMsg::Admin(AdminAction::GetRoles);
-        let _ = ws_clone.send_with_u8_array(&wincode::serialize(&get_roles).unwrap());
-    });
-    ws.set_onopen(Some(onopen.as_ref().unchecked_ref()));
-    onopen.forget();
-
-    let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
-        if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
-            let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
-            if let Ok(msg) = wincode::deserialize::<ServerMsg>(&bytes) {
-                match msg {
-                    ServerMsg::Admin(admin_resp) => match admin_resp {
-                        AdminResponse::Volumes { volumes } => {
-                            set_volumes.set(
-                                volumes
-                                    .into_iter()
-                                    .map(|v| (v.id, v.name, v.path, v.role_id))
-                                    .collect(),
-                            );
-                            set_error.set(None);
-                            set_unauthorized.set(false);
-                        }
-                        AdminResponse::Roles { roles, .. } => {
-                            set_roles.set(roles.into_iter().map(|r| (r.id, r.name)).collect());
-                        }
-                        AdminResponse::VolumeAdded { volume } => {
-                            set_volumes.update(|vols| {
-                                vols.push((volume.id, volume.name, volume.path, volume.role_id));
-                            });
-                            set_error.set(None);
-                        }
-                        AdminResponse::VolumeRemoved { id } => {
-                            set_volumes.update(|vols| {
-                                vols.retain(|(vid, _, _, _)| *vid != id);
-                            });
-                            set_error.set(None);
-                        }
-                        AdminResponse::Error { message } => {
-                            set_error.set(Some(message));
-                        }
-                        AdminResponse::Unauthorized => {
-                            set_unauthorized.set(true);
-                        }
-                        _ => {}
-                    },
-                    ServerMsg::Unauthenticated => {
-                        set_unauthorized.set(true);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    });
-    ws.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
-    onmessage.forget();
-
-    ws_handle.set_value(Some(ws));
-}
-
-#[cfg(feature = "hydrate")]
-fn send_action(
-    ws_handle: StoredValue<Option<web_sys::WebSocket>>,
-    action: filebrowser_types::AdminAction,
-) {
-    use filebrowser_types::ClientMsg;
-
-    ws_handle.with_value(|ws| {
-        if let Some(ws) = ws {
-            let msg = ClientMsg::Admin(action);
-            let bytes = wincode::serialize(&msg).unwrap();
-            let _ = ws.send_with_u8_array(&bytes);
-        }
-    });
-}
+use crate::ws::WsCtx;
 
 #[component]
 pub fn AdminVolumesPage() -> impl IntoView {
+    let ws = expect_context::<WsCtx>();
+
     let (volumes, set_volumes) = signal(Vec::<(u64, String, String, u64)>::new());
     let (roles, set_roles) = signal(Vec::<(u64, String)>::new());
     let (error, set_error) = signal(None::<String>);
@@ -115,6 +19,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
 
     #[cfg(not(feature = "hydrate"))]
     let _ = (
+        &ws,
         set_volumes,
         set_roles,
         set_error,
@@ -125,17 +30,52 @@ pub fn AdminVolumesPage() -> impl IntoView {
     );
 
     #[cfg(feature = "hydrate")]
-    let ws_handle = StoredValue::new(None::<web_sys::WebSocket>);
+    {
+        use filebrowser_types::AdminResponse;
 
-    #[cfg(feature = "hydrate")]
+        ws.set_on_admin(move |resp| match resp {
+            AdminResponse::Volumes { volumes } => {
+                set_volumes.set(
+                    volumes
+                        .into_iter()
+                        .map(|v| (v.id, v.name, v.path, v.role_id))
+                        .collect(),
+                );
+                set_error.set(None);
+                set_unauthorized.set(false);
+            }
+            AdminResponse::Roles { roles, .. } => {
+                set_roles.set(roles.into_iter().map(|r| (r.id, r.name)).collect());
+            }
+            AdminResponse::VolumeAdded { volume } => {
+                set_volumes.update(|vols| {
+                    vols.push((volume.id, volume.name, volume.path, volume.role_id));
+                });
+                set_error.set(None);
+            }
+            AdminResponse::VolumeRemoved { id } => {
+                set_volumes.update(|vols| {
+                    vols.retain(|(vid, _, _, _)| *vid != id);
+                });
+                set_error.set(None);
+            }
+            AdminResponse::Error { message } => {
+                set_error.set(Some(message));
+            }
+            AdminResponse::Unauthorized => {
+                set_unauthorized.set(true);
+            }
+            _ => {}
+        });
+        on_cleanup(move || ws.clear_on_admin());
+    }
+
     Effect::new(move |_| {
-        connect_volumes_ws(
-            set_volumes,
-            set_roles,
-            set_error,
-            set_unauthorized,
-            ws_handle,
-        );
+        #[cfg(feature = "hydrate")]
+        if ws.ready.get() {
+            ws.send(filebrowser_types::AdminAction::GetVolumes);
+            ws.send(filebrowser_types::AdminAction::GetRoles);
+        }
     });
 
     let add_disabled = move || {
@@ -226,7 +166,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                     let n = name.get_untracked();
                                     let p = path.get_untracked();
                                     if let Some(rid) = selected_role.get_untracked() {
-                                        send_action(ws_handle, filebrowser_types::AdminAction::AddVolume {
+                                        ws.send(filebrowser_types::AdminAction::AddVolume {
                                             name: n,
                                             path: p,
                                             role_id: rid,
@@ -270,7 +210,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                             class="btn btn-error btn-sm"
                                             on:click=move |_| {
                                                 #[cfg(feature = "hydrate")]
-                                                send_action(ws_handle, filebrowser_types::AdminAction::RemoveVolume { id });
+                                                ws.send(filebrowser_types::AdminAction::RemoveVolume { id });
                                             }
                                         >
                                             "Delete"

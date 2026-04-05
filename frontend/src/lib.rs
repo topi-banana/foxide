@@ -1,5 +1,6 @@
 mod admin;
 mod header;
+pub mod ws;
 
 use leptos::prelude::*;
 use leptos_meta::*;
@@ -31,6 +32,15 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+
+    let ws = ws::WsCtx::new();
+    provide_context(ws);
+
+    #[cfg(feature = "hydrate")]
+    Effect::new(move |_| {
+        ws.connect();
+    });
+
     let (sidebar_open, set_sidebar_open) = signal(false);
     let (theme, set_theme) = signal(Theme::Light);
 

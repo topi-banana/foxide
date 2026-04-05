@@ -81,45 +81,9 @@ fn ThemeSwitcher(theme: ReadSignal<Theme>, set_theme: WriteSignal<Theme>) -> imp
     }
 }
 
-#[cfg(feature = "hydrate")]
-fn connect_ws(set_user: WriteSignal<Option<String>>) {
-    use filebrowser_types::ServerMsg;
-    use wasm_bindgen::prelude::*;
-
-    let location = web_sys::window().unwrap().location();
-    let protocol = location.protocol().unwrap();
-    let host = location.host().unwrap();
-    let ws_protocol = if protocol == "https:" { "wss:" } else { "ws:" };
-    let url = format!("{ws_protocol}//{host}/ws");
-
-    let ws = web_sys::WebSocket::new(&url).unwrap();
-    ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-
-    let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
-        if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
-            let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
-            if let Ok(msg) = wincode::deserialize::<ServerMsg>(&bytes) {
-                match msg {
-                    ServerMsg::Hello { username } => set_user.set(Some(username)),
-                    ServerMsg::Unauthenticated => set_user.set(None),
-                    _ => {}
-                }
-            }
-        }
-    });
-
-    ws.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
-    onmessage.forget();
-}
-
 #[component]
 fn UserMenu() -> impl IntoView {
-    let (user, set_user) = signal(None::<String>);
-
-    #[cfg(feature = "hydrate")]
-    Effect::new(move |_| {
-        connect_ws(set_user);
-    });
+    let ws = expect_context::<crate::ws::WsCtx>();
 
     let user_icon = view! {
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,10 +98,10 @@ fn UserMenu() -> impl IntoView {
             </div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow">
                 {move || {
-                    if let Some(username) = user.get() {
+                    if let Some(username) = ws.username.get() {
                         view! {
                             <li class="menu-title"><span>{username}</span></li>
-                            <li><a href=logout_href_with_redirect() rel="external" on:click=move |_| set_user.set(None)>"Logout"</a></li>
+                            <li><a href=logout_href_with_redirect() rel="external">"Logout"</a></li>
                         }.into_any()
                     } else {
                         let login_href = login_href_with_redirect();
