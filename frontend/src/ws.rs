@@ -1,5 +1,5 @@
 #[cfg(feature = "hydrate")]
-use filebrowser_types::AdminResponse;
+use filebrowser_types::{AdminResponse, BrowseResponse};
 use leptos::prelude::*;
 
 #[cfg(feature = "hydrate")]
@@ -26,6 +26,9 @@ pub struct WsCtx {
     #[cfg(feature = "hydrate")]
     #[allow(clippy::type_complexity)]
     on_admin: StoredValue<Option<Arc<dyn Fn(AdminResponse) + Send + Sync>>>,
+    #[cfg(feature = "hydrate")]
+    #[allow(clippy::type_complexity)]
+    on_browse: StoredValue<Option<Arc<dyn Fn(BrowseResponse) + Send + Sync>>>,
 }
 
 impl Default for WsCtx {
@@ -45,6 +48,8 @@ impl WsCtx {
             ws: StoredValue::new(None),
             #[cfg(feature = "hydrate")]
             on_admin: StoredValue::new(None),
+            #[cfg(feature = "hydrate")]
+            on_browse: StoredValue::new(None),
         }
     }
 
@@ -98,6 +103,13 @@ impl WsCtx {
                             ctx.volumes
                                 .set(volumes.into_iter().map(|v| (v.id, v.name)).collect());
                         }
+                        ServerMsg::Browse(resp) => {
+                            ctx.on_browse.with_value(|handler| {
+                                if let Some(handler) = handler {
+                                    handler(resp);
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -128,5 +140,24 @@ impl WsCtx {
     #[cfg(feature = "hydrate")]
     pub fn set_on_admin(&self, handler: impl Fn(AdminResponse) + Send + Sync + 'static) {
         self.on_admin.set_value(Some(Arc::new(handler)));
+    }
+
+    /// Send a browse action over the shared connection.
+    #[cfg(feature = "hydrate")]
+    pub fn send_browse(&self, action: filebrowser_types::BrowseAction) {
+        use filebrowser_types::ClientMsg;
+        self.ws.with_value(|ws| {
+            if let Some(ws) = ws {
+                let msg = ClientMsg::Browse(action);
+                let bytes = wincode::serialize(&msg).unwrap();
+                let _ = ws.send_with_u8_array(&bytes);
+            }
+        });
+    }
+
+    /// Register the callback that receives [`BrowseResponse`] messages.
+    #[cfg(feature = "hydrate")]
+    pub fn set_on_browse(&self, handler: impl Fn(BrowseResponse) + Send + Sync + 'static) {
+        self.on_browse.set_value(Some(Arc::new(handler)));
     }
 }

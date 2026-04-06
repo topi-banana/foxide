@@ -1,5 +1,6 @@
 mod admin;
 mod header;
+mod volume;
 pub mod ws;
 
 use leptos::prelude::*;
@@ -9,6 +10,7 @@ use leptos_router::path;
 
 use admin::{AdminPage, AdminTokensPage, AdminVolumesPage};
 use header::{Header, Theme};
+use volume::VolumePage;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -82,7 +84,7 @@ pub fn App() -> impl IntoView {
                             view! {
                                 <ul class="menu">
                                     {move || ws.volumes.get().into_iter().map(|(id, name)| {
-                                        let href = format!("/volume/{id}");
+                                        let href = format!("/v/{id}");
                                         view! {
                                             <li><a href=href>{name}</a></li>
                                         }
@@ -106,6 +108,7 @@ pub fn App() -> impl IntoView {
                     <Router>
                         <Routes fallback=|| "Not found.">
                             <Route path=path!("/") view=HomePage/>
+                            <Route path=path!("/v/:id") view=VolumePage/>
                             <Route path=path!("/admin") view=AdminPage/>
                             <Route path=path!("/admin/tokens") view=AdminTokensPage/>
                             <Route path=path!("/admin/volumes") view=AdminVolumesPage/>

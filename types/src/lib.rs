@@ -6,6 +6,12 @@ use wincode::{SchemaRead, SchemaWrite};
 pub enum ClientMsg {
     Admin(AdminAction),
     GetMyVolumes,
+    Browse(BrowseAction),
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub enum BrowseAction {
+    ListDirectory { volume_id: u64 },
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
@@ -39,6 +45,25 @@ pub enum ServerMsg {
     MyVolumes {
         volumes: Vec<VolumeInfo>,
     },
+    Browse(BrowseResponse),
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub enum BrowseResponse {
+    DirectoryListing { entries: Vec<DirEntry> },
+    Error { message: String },
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub struct DirEntry {
+    pub name: String,
+    pub entry_type: EntryType,
+}
+
+#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+pub enum EntryType {
+    File,
+    Directory,
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]

@@ -1,4 +1,5 @@
 mod admin;
+mod browse;
 pub(crate) mod my_volumes;
 
 use std::collections::BTreeMap;
@@ -165,6 +166,19 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
             },
             ClientMsg::GetMyVolumes => match &user {
                 Some(user) => my_volumes::get_my_volumes(&state, user, &writer).await,
+                None => {
+                    writer.send(ServerMsg::Unauthenticated);
+                }
+            },
+            ClientMsg::Browse(action) => match &user {
+                Some(user) => {
+                    use filebrowser_types::BrowseAction;
+                    match action {
+                        BrowseAction::ListDirectory { volume_id } => {
+                            browse::list_directory(&state, user, &writer, volume_id).await;
+                        }
+                    }
+                }
                 None => {
                     writer.send(ServerMsg::Unauthenticated);
                 }
