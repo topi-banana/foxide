@@ -71,14 +71,26 @@ pub fn App() -> impl IntoView {
                     <ul class="menu">
                         <li><a href="/">"Home"</a></li>
                     </ul>
-                    <ul class="menu">
-                        {move || ws.volumes.get().into_iter().map(|(id, name)| {
-                            let href = format!("/volume/{id}");
+                    {move || {
+                        if !ws.ready.get() {
                             view! {
-                                <li><a href=href>{name}</a></li>
-                            }
-                        }).collect_view()}
-                    </ul>
+                                <div class="flex justify-center py-4">
+                                    <span class="loading loading-spinner loading-sm"></span>
+                                </div>
+                            }.into_any()
+                        } else {
+                            view! {
+                                <ul class="menu">
+                                    {move || ws.volumes.get().into_iter().map(|(id, name)| {
+                                        let href = format!("/volume/{id}");
+                                        view! {
+                                            <li><a href=href>{name}</a></li>
+                                        }
+                                    }).collect_view()}
+                                </ul>
+                            }.into_any()
+                        }
+                    }}
                     <ul class="menu">
                         <li><a href="/admin">"Admin"</a></li>
                     </ul>
