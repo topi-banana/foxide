@@ -44,7 +44,7 @@ pub async fn handle(state: &AppState, user: &User, writer: &SocketWriter, action
             name,
             path,
             role_id,
-        } => volumes::add_volume(state, writer, name, path, role_id),
-        AdminAction::RemoveVolume { id } => volumes::remove_volume(state, writer, id),
+        } => volumes::add_volume(state, writer, name, path, role_id).await,
+        AdminAction::RemoveVolume { id } => volumes::remove_volume(state, writer, id).await,
     }
 }

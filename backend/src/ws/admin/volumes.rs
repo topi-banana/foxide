@@ -1,5 +1,6 @@
 use crate::AppState;
 use crate::ws::SocketWriter;
+use crate::ws::my_volumes;
 use filebrowser_types::{AdminResponse, ServerMsg, VolumeInfo};
 
 pub fn get_volumes(state: &AppState, writer: &SocketWriter) {
@@ -17,7 +18,7 @@ pub fn get_volumes(state: &AppState, writer: &SocketWriter) {
     writer.send(ServerMsg::Admin(AdminResponse::Volumes { volumes }));
 }
 
-pub fn add_volume(
+pub async fn add_volume(
     state: &AppState,
     writer: &SocketWriter,
     name: String,
@@ -34,6 +35,7 @@ pub fn add_volume(
                     role_id: v.role_id,
                 },
             }));
+            my_volumes::broadcast_volumes(state).await;
         }
         Err(e) => {
             tracing::error!("failed to add volume: {e}");
@@ -44,10 +46,11 @@ pub fn add_volume(
     }
 }
 
-pub fn remove_volume(state: &AppState, writer: &SocketWriter, id: u64) {
+pub async fn remove_volume(state: &AppState, writer: &SocketWriter, id: u64) {
     match state.volume_storage.remove(id) {
         Ok(true) => {
             writer.send(ServerMsg::Admin(AdminResponse::VolumeRemoved { id }));
+            my_volumes::broadcast_volumes(state).await;
         }
         Ok(false) => {
             writer.send(ServerMsg::Admin(AdminResponse::Error {

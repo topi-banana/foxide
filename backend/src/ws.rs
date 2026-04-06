@@ -1,5 +1,5 @@
 mod admin;
-mod my_volumes;
+pub(crate) mod my_volumes;
 
 use std::collections::BTreeMap;
 
@@ -80,6 +80,11 @@ impl SocketStorage {
                 map.remove(&user_id);
             }
         }
+    }
+
+    /// Return all currently connected user IDs.
+    pub async fn connected_user_ids(&self) -> Vec<u64> {
+        self.senders.lock().await.keys().copied().collect()
     }
 }
 
