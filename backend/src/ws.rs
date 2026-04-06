@@ -1,4 +1,5 @@
 mod admin;
+mod my_volumes;
 
 use std::collections::BTreeMap;
 
@@ -153,6 +154,12 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
         match client_msg {
             ClientMsg::Admin(action) => match &user {
                 Some(user) => admin::handle(&state, user, &writer, action).await,
+                None => {
+                    writer.send(ServerMsg::Unauthenticated);
+                }
+            },
+            ClientMsg::GetMyVolumes => match &user {
+                Some(user) => my_volumes::get_my_volumes(&state, user, &writer).await,
                 None => {
                     writer.send(ServerMsg::Unauthenticated);
                 }

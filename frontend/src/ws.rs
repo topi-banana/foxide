@@ -18,6 +18,8 @@ pub struct WsCtx {
     pub avatar_url: RwSignal<Option<String>>,
     /// `true` once the server has replied with `Hello` or `Unauthenticated`.
     pub ready: RwSignal<bool>,
+    /// Volumes accessible to the current user (populated after Hello).
+    pub volumes: RwSignal<Vec<(u64, String)>>,
 
     #[cfg(feature = "hydrate")]
     ws: StoredValue<Option<web_sys::WebSocket>>,
@@ -38,6 +40,7 @@ impl WsCtx {
             username: RwSignal::new(None),
             avatar_url: RwSignal::new(None),
             ready: RwSignal::new(false),
+            volumes: RwSignal::new(vec![]),
             #[cfg(feature = "hydrate")]
             ws: StoredValue::new(None),
             #[cfg(feature = "hydrate")]
@@ -61,6 +64,7 @@ impl WsCtx {
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
         let ctx = *self;
+        let ws_ref = ws.clone();
         let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
             if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
                 let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
@@ -73,6 +77,10 @@ impl WsCtx {
                             ctx.username.set(Some(username));
                             ctx.avatar_url.set(avatar_url);
                             ctx.ready.set(true);
+                            // Fetch accessible volumes for the sidebar
+                            let req = filebrowser_types::ClientMsg::GetMyVolumes;
+                            let bytes = wincode::serialize(&req).unwrap();
+                            let _ = ws_ref.send_with_u8_array(&bytes);
                         }
                         ServerMsg::Unauthenticated => {
                             ctx.username.set(None);
@@ -85,6 +93,10 @@ impl WsCtx {
                                     handler(resp);
                                 }
                             });
+                        }
+                        ServerMsg::MyVolumes { volumes } => {
+                            ctx.volumes
+                                .set(volumes.into_iter().map(|v| (v.id, v.name)).collect());
                         }
                     }
                 }

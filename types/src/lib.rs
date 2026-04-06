@@ -5,6 +5,7 @@ use wincode::{SchemaRead, SchemaWrite};
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
 pub enum ClientMsg {
     Admin(AdminAction),
+    GetMyVolumes,
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
@@ -35,6 +36,9 @@ pub enum ServerMsg {
     },
     Unauthenticated,
     Admin(AdminResponse),
+    MyVolumes {
+        volumes: Vec<VolumeInfo>,
+    },
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]

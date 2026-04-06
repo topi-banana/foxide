@@ -70,9 +70,16 @@ pub fn App() -> impl IntoView {
                 <nav class="w-64 h-full p-4">
                     <ul class="menu">
                         <li><a href="/">"Home"</a></li>
-                        <li><a>"Documents"</a></li>
-                        <li><a>"Photos"</a></li>
-                        <li><a>"Settings"</a></li>
+                    </ul>
+                    <ul class="menu">
+                        {move || ws.volumes.get().into_iter().map(|(id, name)| {
+                            let href = format!("/volume/{id}");
+                            view! {
+                                <li><a href=href>{name}</a></li>
+                            }
+                        }).collect_view()}
+                    </ul>
+                    <ul class="menu">
                         <li><a href="/admin">"Admin"</a></li>
                     </ul>
                 </nav>
