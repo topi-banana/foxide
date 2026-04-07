@@ -88,12 +88,18 @@ pub async fn list_directory(
         Ok(read_dir) => {
             for entry in read_dir.flatten() {
                 let name = entry.file_name().to_string_lossy().into_owned();
-                let entry_type = if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
+                let metadata = entry.metadata().ok();
+                let entry_type = if metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false) {
                     EntryType::Directory
                 } else {
                     EntryType::File
                 };
-                entries.push(DirEntry { name, entry_type });
+                let size = metadata.map(|m| m.len()).unwrap_or(0);
+                entries.push(DirEntry {
+                    name,
+                    entry_type,
+                    size,
+                });
             }
         }
         Err(e) => {

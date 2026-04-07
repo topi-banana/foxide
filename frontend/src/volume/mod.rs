@@ -68,6 +68,7 @@ fn write_viewmode_cookie(_mode: ViewMode) {}
 struct FileEntry {
     name: String,
     entry_type: EntryType,
+    size: u64,
 }
 
 impl FileEntry {
@@ -147,6 +148,7 @@ pub fn VolumePage() -> impl IntoView {
                         .map(|e| FileEntry {
                             name: e.name,
                             entry_type: e.entry_type,
+                            size: e.size,
                         })
                         .collect(),
                 );
@@ -303,6 +305,25 @@ fn icon_color(is_dir: bool) -> &'static str {
     }
 }
 
+fn format_size(bytes: u64) -> String {
+    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+    if bytes == 0 {
+        return "—".into();
+    }
+    let mut size = bytes as f64;
+    for unit in UNITS {
+        if size < 1024.0 {
+            return if size.fract() < 0.05 {
+                format!("{:.0} {unit}", size)
+            } else {
+                format!("{:.1} {unit}", size)
+            };
+        }
+        size /= 1024.0;
+    }
+    format!("{:.1} PB", size)
+}
+
 // --- List view ---
 
 fn view_list(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
@@ -339,6 +360,7 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
             let is_dir = entry.is_dir();
             let href = entry.href(vid, cp);
             let type_label = if is_dir { "Directory" } else { "File" };
+            let size_str = format_size(entry.size);
             let cls = icon_color(is_dir);
             view! {
                 <tr>
@@ -349,6 +371,7 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                         </a>
                     </td>
                     <td>{type_label}</td>
+                    <td class="text-right">{size_str}</td>
                 </tr>
             }
         })
@@ -360,6 +383,7 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                     <tr>
                         <th>"Name"</th>
                         <th>"Type"</th>
+                        <th class="text-right">"Size"</th>
                     </tr>
                 </thead>
                 <tbody>{rows}</tbody>

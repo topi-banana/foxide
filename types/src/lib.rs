@@ -58,6 +58,7 @@ pub enum BrowseResponse {
 pub struct DirEntry {
     pub name: String,
     pub entry_type: EntryType,
+    pub size: u64,
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
