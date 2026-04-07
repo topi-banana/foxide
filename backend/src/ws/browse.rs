@@ -7,7 +7,13 @@ use crate::login::User;
 use crate::ws::SocketWriter;
 use filebrowser_types::{BrowseResponse, DirEntry, EntryType, ServerMsg};
 
-pub async fn list_directory(state: &AppState, user: &User, writer: &SocketWriter, volume_id: u64) {
+pub async fn list_directory(
+    state: &AppState,
+    user: &User,
+    writer: &SocketWriter,
+    volume_id: u64,
+    sub_path: &str,
+) {
     // Look up the volume
     let volume = match state
         .volume_storage
@@ -42,17 +48,43 @@ pub async fn list_directory(state: &AppState, user: &User, writer: &SocketWriter
         return;
     }
 
-    // Check directory existence and read entries
-    let path = Path::new(&volume.path);
-    if !path.is_dir() {
+    // Resolve the target directory, preventing path traversal
+    let root = match Path::new(&volume.path).canonicalize() {
+        Ok(p) => p,
+        Err(_) => {
+            writer.send(ServerMsg::Browse(BrowseResponse::Error {
+                message: "Volume directory does not exist".into(),
+            }));
+            return;
+        }
+    };
+
+    let target = match root.join(sub_path.trim_start_matches('/')).canonicalize() {
+        Ok(p) => p,
+        Err(_) => {
+            writer.send(ServerMsg::Browse(BrowseResponse::Error {
+                message: "Directory not found".into(),
+            }));
+            return;
+        }
+    };
+
+    if !target.starts_with(&root) {
         writer.send(ServerMsg::Browse(BrowseResponse::Error {
-            message: "Volume directory does not exist".into(),
+            message: "Access denied".into(),
+        }));
+        return;
+    }
+
+    if !target.is_dir() {
+        writer.send(ServerMsg::Browse(BrowseResponse::Error {
+            message: "Not a directory".into(),
         }));
         return;
     }
 
     let mut entries = Vec::new();
-    match std::fs::read_dir(path) {
+    match std::fs::read_dir(&target) {
         Ok(read_dir) => {
             for entry in read_dir.flatten() {
                 let name = entry.file_name().to_string_lossy().into_owned();

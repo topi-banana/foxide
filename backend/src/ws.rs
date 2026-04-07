@@ -174,8 +174,8 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
                 Some(user) => {
                     use filebrowser_types::BrowseAction;
                     match action {
-                        BrowseAction::ListDirectory { volume_id } => {
-                            browse::list_directory(&state, user, &writer, volume_id).await;
+                        BrowseAction::ListDirectory { volume_id, path } => {
+                            browse::list_directory(&state, user, &writer, volume_id, &path).await;
                         }
                     }
                 }

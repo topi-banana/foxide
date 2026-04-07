@@ -11,7 +11,7 @@ pub enum ClientMsg {
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
 pub enum BrowseAction {
-    ListDirectory { volume_id: u64 },
+    ListDirectory { volume_id: u64, path: String },
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]

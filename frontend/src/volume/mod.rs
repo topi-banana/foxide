@@ -1,6 +1,6 @@
 use filebrowser_types::EntryType;
 use leptos::prelude::*;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_params_map, use_query_map};
 
 use crate::ws::WsCtx;
 
@@ -14,6 +14,7 @@ struct FileEntry {
 pub fn VolumePage() -> impl IntoView {
     let ws = expect_context::<WsCtx>();
     let params = use_params_map();
+    let query = use_query_map();
 
     let volume_id = move || {
         params
@@ -21,6 +22,8 @@ pub fn VolumePage() -> impl IntoView {
             .get("id")
             .and_then(|id| id.parse::<u64>().ok())
     };
+
+    let current_path = move || query.read().get("path").unwrap_or_else(|| "/".to_string());
 
     let volume_name = move || {
         let vid = volume_id();
@@ -72,13 +75,36 @@ pub fn VolumePage() -> impl IntoView {
             && let Some(vid) = volume_id()
         {
             set_loading.set(true);
-            ws.send_browse(filebrowser_types::BrowseAction::ListDirectory { volume_id: vid });
+            ws.send_browse(filebrowser_types::BrowseAction::ListDirectory {
+                volume_id: vid,
+                path: current_path(),
+            });
         }
     });
 
     view! {
         <div class="max-w-4xl mx-auto">
-            <h1 class="text-2xl font-bold mb-6">{volume_name}</h1>
+            <h1 class="text-2xl font-bold mb-2">{volume_name}</h1>
+
+            <div class="text-sm breadcrumbs mb-4">
+                <ul>
+                    {move || {
+                        let vid = volume_id().unwrap_or(0);
+                        let cp = current_path();
+                        let segments: Vec<&str> = cp.split('/').filter(|s| !s.is_empty()).collect();
+                        let mut crumbs = vec![
+                            view! { <li><a href=format!("/v/{vid}")>"/"</a></li> }.into_any(),
+                        ];
+                        for (i, seg) in segments.iter().enumerate() {
+                            let path = format!("/{}", segments[..=i].join("/"));
+                            let href = format!("/v/{vid}?path={path}");
+                            let seg = seg.to_string();
+                            crumbs.push(view! { <li><a href=href>{seg}</a></li> }.into_any());
+                        }
+                        crumbs
+                    }}
+                </ul>
+            </div>
 
             {move || error.get().map(|msg| view! {
                 <div class="alert alert-error mb-4">
@@ -94,6 +120,8 @@ pub fn VolumePage() -> impl IntoView {
 
             {move || (!loading.get()).then(|| {
                 let items = entries.get();
+                let vid = volume_id().unwrap_or(0);
+                let cp = current_path();
                 if items.is_empty() {
                     view! {
                         <p class="text-base-content/70">"This directory is empty."</p>
@@ -103,9 +131,22 @@ pub fn VolumePage() -> impl IntoView {
                         <ul class="menu bg-base-200 rounded-box w-full">
                             {items.into_iter().map(|entry| {
                                 let is_dir = matches!(entry.entry_type, EntryType::Directory);
+                                let href = if is_dir {
+                                    let child_path = if cp == "/" {
+                                        format!("/{}", entry.name)
+                                    } else {
+                                        format!("{}/{}", cp.trim_end_matches('/'), entry.name)
+                                    };
+                                    Some(format!("/v/{vid}?path={child_path}"))
+                                } else {
+                                    None
+                                };
                                 view! {
                                     <li>
-                                        <a class="flex items-center gap-2">
+                                        <a
+                                            href=href.unwrap_or_default()
+                                            class="flex items-center gap-2"
+                                        >
                                             {if is_dir {
                                                 view! {
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
