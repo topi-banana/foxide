@@ -121,7 +121,7 @@ pub fn App() -> impl IntoView {
 }
 
 #[cfg(feature = "hydrate")]
-fn html_document() -> Option<web_sys::HtmlDocument> {
+pub(crate) fn html_document() -> Option<web_sys::HtmlDocument> {
     use wasm_bindgen::JsCast;
     web_sys::window()?
         .document()?
