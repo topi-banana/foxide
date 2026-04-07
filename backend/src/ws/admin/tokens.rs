@@ -10,7 +10,7 @@ pub fn get_tokens(state: &AppState, writer: &SocketWriter) {
         .map(|(expires, user)| TokenInfo {
             user_id: user.user_id,
             username: user.username,
-            expires: expires.to_rfc3339(),
+            expires,
         })
         .collect();
     writer.send(ServerMsg::Admin(AdminResponse::Tokens { tokens }));

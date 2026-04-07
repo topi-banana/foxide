@@ -92,7 +92,7 @@ fn UserMenu() -> impl IntoView {
                     if let Some(url) = ws.avatar_url.get() {
                         view! {
                             <div class="w-8 rounded-full">
-                                <img src=url alt="avatar"/>
+                                <img src=url.as_str() alt="avatar"/>
                             </div>
                         }.into_any()
                     } else {

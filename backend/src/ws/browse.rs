@@ -98,11 +98,11 @@ pub async fn list_directory(
                 let created_at = metadata
                     .as_ref()
                     .and_then(|m| m.created().ok())
-                    .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
+                    .map(chrono::DateTime::<chrono::Utc>::from);
                 let updated_at = metadata
                     .as_ref()
                     .and_then(|m| m.modified().ok())
-                    .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
+                    .map(chrono::DateTime::<chrono::Utc>::from);
                 entries.push(DirEntry {
                     name,
                     entry_type,

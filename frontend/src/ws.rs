@@ -15,7 +15,7 @@ pub struct WsCtx {
     /// Logged-in username.  `None` until `Hello` arrives (or if unauthenticated).
     pub username: RwSignal<Option<String>>,
     /// Discord avatar URL.  `None` if unauthenticated or no avatar set.
-    pub avatar_url: RwSignal<Option<String>>,
+    pub avatar_url: RwSignal<Option<url::Url>>,
     /// `true` once the server has replied with `Hello` or `Unauthenticated`.
     pub ready: RwSignal<bool>,
     /// Volumes accessible to the current user (populated after Hello).
@@ -73,7 +73,7 @@ impl WsCtx {
         let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
             if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
                 let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
-                if let Ok(msg) = wincode::deserialize::<ServerMsg>(&bytes) {
+                if let Ok(msg) = rmp_serde::from_slice::<ServerMsg>(&bytes) {
                     match msg {
                         ServerMsg::Hello {
                             username,
@@ -84,7 +84,7 @@ impl WsCtx {
                             ctx.ready.set(true);
                             // Fetch accessible volumes for the sidebar
                             let req = filebrowser_types::ClientMsg::GetMyVolumes;
-                            let bytes = wincode::serialize(&req).unwrap();
+                            let bytes = rmp_serde::to_vec(&req).unwrap();
                             let _ = ws_ref.send_with_u8_array(&bytes);
                         }
                         ServerMsg::Unauthenticated => {
@@ -127,7 +127,7 @@ impl WsCtx {
         self.ws.with_value(|ws| {
             if let Some(ws) = ws {
                 let msg = ClientMsg::Admin(action);
-                let bytes = wincode::serialize(&msg).unwrap();
+                let bytes = rmp_serde::to_vec(&msg).unwrap();
                 let _ = ws.send_with_u8_array(&bytes);
             }
         });
@@ -149,7 +149,7 @@ impl WsCtx {
         self.ws.with_value(|ws| {
             if let Some(ws) = ws {
                 let msg = ClientMsg::Browse(action);
-                let bytes = wincode::serialize(&msg).unwrap();
+                let bytes = rmp_serde::to_vec(&msg).unwrap();
                 let _ = ws.send_with_u8_array(&bytes);
             }
         });

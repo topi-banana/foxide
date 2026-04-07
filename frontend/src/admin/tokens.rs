@@ -6,7 +6,7 @@ use crate::ws::WsCtx;
 pub fn AdminTokensPage() -> impl IntoView {
     let ws = expect_context::<WsCtx>();
 
-    let (tokens, set_tokens) = signal(Vec::<(u64, String, String)>::new());
+    let (tokens, set_tokens) = signal(Vec::<(u64, String, chrono::DateTime<chrono::Utc>)>::new());
     let (error, set_error) = signal(None::<String>);
     let (unauthorized, set_unauthorized) = signal(false);
 
@@ -76,7 +76,7 @@ pub fn AdminTokensPage() -> impl IntoView {
                                 <tr>
                                     <td>{user_id}</td>
                                     <td>{username}</td>
-                                    <td>{expires}</td>
+                                    <td>{expires.format("%Y-%m-%d %H:%M:%S").to_string()}</td>
                                 </tr>
                             }
                         }).collect_view()}

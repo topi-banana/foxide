@@ -1,20 +1,21 @@
-use wincode::{SchemaRead, SchemaWrite};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 // --- Client → Server ---
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClientMsg {
     Admin(AdminAction),
     GetMyVolumes,
     Browse(BrowseAction),
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BrowseAction {
     ListDirectory { volume_id: u64, path: String },
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AdminAction {
     GetRoles,
     SetAdminRole {
@@ -34,11 +35,11 @@ pub enum AdminAction {
 
 // --- Server → Client ---
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServerMsg {
     Hello {
         username: String,
-        avatar_url: Option<String>,
+        avatar_url: Option<url::Url>,
     },
     Unauthenticated,
     Admin(AdminResponse),
@@ -48,28 +49,28 @@ pub enum ServerMsg {
     Browse(BrowseResponse),
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BrowseResponse {
     DirectoryListing { entries: Vec<DirEntry> },
     Error { message: String },
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirEntry {
     pub name: String,
     pub entry_type: EntryType,
     pub size: u64,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EntryType {
     File,
     Directory,
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AdminResponse {
     Roles {
         roles: Vec<RoleInfo>,
@@ -96,20 +97,20 @@ pub enum AdminResponse {
     Unauthorized,
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleInfo {
     pub id: u64,
     pub name: String,
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenInfo {
     pub user_id: u64,
     pub username: String,
-    pub expires: String,
+    pub expires: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, SchemaWrite, SchemaRead)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VolumeInfo {
     pub id: u64,
     pub name: String,

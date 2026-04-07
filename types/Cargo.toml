@@ -4,4 +4,6 @@ name = "filebrowser-types"
 version.workspace = true
 
 [dependencies]
-wincode = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+url = { workspace = true }

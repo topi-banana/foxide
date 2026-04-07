@@ -16,6 +16,7 @@ leptos = { workspace = true, features = ["ssr"] }
 leptos_axum = { workspace = true }
 rand = { workspace = true }
 reqwest = { workspace = true }
+rmp-serde = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serenity = { workspace = true }
@@ -26,6 +27,5 @@ tower-cookies = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
-wincode = { workspace = true }
 
 [features]

@@ -26,12 +26,14 @@ pub struct User {
 }
 
 impl User {
-    pub fn avatar_url(&self) -> Option<String> {
+    pub fn avatar_url(&self) -> Option<url::Url> {
         let hash = self.avatar_hash.as_ref()?;
-        Some(format!(
-            "https://cdn.discordapp.com/avatars/{}/{hash}.png?size=128",
-            self.user_id
-        ))
+        let mut url = url::Url::parse("https://cdn.discordapp.com/avatars").unwrap();
+        url.path_segments_mut()
+            .ok()?
+            .extend([&self.user_id.to_string(), &format!("{hash}.png")]);
+        url.query_pairs_mut().append_pair("size", "128");
+        Some(url)
     }
 }
 

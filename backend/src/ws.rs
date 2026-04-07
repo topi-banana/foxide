@@ -118,7 +118,7 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
         },
         None => ServerMsg::Unauthenticated,
     };
-    let bytes = wincode::serialize(&msg).unwrap();
+    let bytes = rmp_serde::to_vec(&msg).unwrap();
     if sink.send(Message::Binary(bytes.into())).await.is_err() {
         return;
     }
@@ -137,7 +137,7 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
     // Spawn a task that forwards channel messages to the WebSocket sink
     let write_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
-            let bytes = wincode::serialize(&msg).unwrap();
+            let bytes = rmp_serde::to_vec(&msg).unwrap();
             if sink.send(Message::Binary(bytes.into())).await.is_err() {
                 break;
             }
@@ -153,7 +153,7 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
             continue;
         };
 
-        let Ok(client_msg) = wincode::deserialize::<ClientMsg>(&data) else {
+        let Ok(client_msg) = rmp_serde::from_slice::<ClientMsg>(&data) else {
             continue;
         };
 

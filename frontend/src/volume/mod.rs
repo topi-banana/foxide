@@ -69,8 +69,8 @@ struct FileEntry {
     name: String,
     entry_type: EntryType,
     size: u64,
-    created_at: Option<String>,
-    updated_at: Option<String>,
+    created_at: Option<chrono::DateTime<chrono::Utc>>,
+    updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl FileEntry {
@@ -328,12 +328,9 @@ fn format_size(bytes: u64) -> String {
     format!("{:.1} PB", size)
 }
 
-fn format_datetime(iso: &Option<String>) -> String {
-    match iso {
-        Some(s) => s
-            .get(..19)
-            .map(|t| t.replace('T', " "))
-            .unwrap_or_else(|| s.clone()),
+fn format_datetime(dt: &Option<chrono::DateTime<chrono::Utc>>) -> String {
+    match dt {
+        Some(dt) => dt.format("%Y-%m-%d %H:%M:%S").to_string(),
         None => "—".into(),
     }
 }
