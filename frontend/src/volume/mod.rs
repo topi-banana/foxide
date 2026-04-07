@@ -69,6 +69,8 @@ struct FileEntry {
     name: String,
     entry_type: EntryType,
     size: u64,
+    created_at: Option<String>,
+    updated_at: Option<String>,
 }
 
 impl FileEntry {
@@ -149,6 +151,8 @@ pub fn VolumePage() -> impl IntoView {
                             name: e.name,
                             entry_type: e.entry_type,
                             size: e.size,
+                            created_at: e.created_at,
+                            updated_at: e.updated_at,
                         })
                         .collect(),
                 );
@@ -324,6 +328,16 @@ fn format_size(bytes: u64) -> String {
     format!("{:.1} PB", size)
 }
 
+fn format_datetime(iso: &Option<String>) -> String {
+    match iso {
+        Some(s) => s
+            .get(..19)
+            .map(|t| t.replace('T', " "))
+            .unwrap_or_else(|| s.clone()),
+        None => "—".into(),
+    }
+}
+
 // --- List view ---
 
 fn view_list(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
@@ -361,6 +375,8 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
             let href = entry.href(vid, cp);
             let type_label = if is_dir { "Directory" } else { "File" };
             let size_str = format_size(entry.size);
+            let created = format_datetime(&entry.created_at);
+            let updated = format_datetime(&entry.updated_at);
             let cls = icon_color(is_dir);
             view! {
                 <tr>
@@ -372,6 +388,8 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                     </td>
                     <td>{type_label}</td>
                     <td class="text-right">{size_str}</td>
+                    <td>{created}</td>
+                    <td>{updated}</td>
                 </tr>
             }
         })
@@ -384,6 +402,8 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                         <th>"Name"</th>
                         <th>"Type"</th>
                         <th class="text-right">"Size"</th>
+                        <th>"Created"</th>
+                        <th>"Updated"</th>
                     </tr>
                 </thead>
                 <tbody>{rows}</tbody>

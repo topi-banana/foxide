@@ -94,11 +94,21 @@ pub async fn list_directory(
                 } else {
                     EntryType::File
                 };
-                let size = metadata.map(|m| m.len()).unwrap_or(0);
+                let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+                let created_at = metadata
+                    .as_ref()
+                    .and_then(|m| m.created().ok())
+                    .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
+                let updated_at = metadata
+                    .as_ref()
+                    .and_then(|m| m.modified().ok())
+                    .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339());
                 entries.push(DirEntry {
                     name,
                     entry_type,
                     size,
+                    created_at,
+                    updated_at,
                 });
             }
         }

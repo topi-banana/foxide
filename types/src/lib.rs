@@ -59,6 +59,8 @@ pub struct DirEntry {
     pub name: String,
     pub entry_type: EntryType,
     pub size: u64,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, SchemaWrite, SchemaRead)]
