@@ -16,6 +16,7 @@ fn build_my_volumes(state: &AppState, user_role_ids: &[u64]) -> Vec<VolumeInfo> 
             name: v.name,
             path: v.path,
             role_id: v.role_id,
+            permission: v.permission,
         })
         .collect()
 }

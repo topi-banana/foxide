@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::ws::SocketWriter;
 use crate::ws::my_volumes;
-use filebrowser_types::{AdminResponse, ServerMsg, VolumeInfo};
+use filebrowser_types::{AdminResponse, Permission, ServerMsg, VolumeInfo};
 
 pub fn get_volumes(state: &AppState, writer: &SocketWriter) {
     let volumes = state
@@ -13,6 +13,7 @@ pub fn get_volumes(state: &AppState, writer: &SocketWriter) {
             name: v.name,
             path: v.path,
             role_id: v.role_id,
+            permission: v.permission,
         })
         .collect();
     writer.send(ServerMsg::Admin(AdminResponse::Volumes { volumes }));
@@ -24,8 +25,9 @@ pub async fn add_volume(
     name: String,
     path: String,
     role_id: u64,
+    permission: Permission,
 ) {
-    match state.volume_storage.add(name, path, role_id) {
+    match state.volume_storage.add(name, path, role_id, permission) {
         Ok(v) => {
             writer.send(ServerMsg::Admin(AdminResponse::VolumeAdded {
                 volume: VolumeInfo {
@@ -33,6 +35,7 @@ pub async fn add_volume(
                     name: v.name,
                     path: v.path,
                     role_id: v.role_id,
+                    permission: v.permission,
                 },
             }));
             my_volumes::broadcast_volumes(state).await;

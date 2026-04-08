@@ -27,6 +27,7 @@ pub enum AdminAction {
         name: String,
         path: String,
         role_id: u64,
+        permission: Permission,
     },
     RemoveVolume {
         id: u64,
@@ -110,10 +111,17 @@ pub struct TokenInfo {
     pub expires: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Permission {
+    ReadOnly,
+    ReadWrite,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VolumeInfo {
     pub id: u64,
     pub name: String,
     pub path: String,
     pub role_id: u64,
+    pub permission: Permission,
 }

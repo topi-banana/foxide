@@ -1,3 +1,4 @@
+use filebrowser_types::Permission;
 use leptos::prelude::*;
 
 use super::RoleSelector;
@@ -7,7 +8,7 @@ use crate::ws::WsCtx;
 pub fn AdminVolumesPage() -> impl IntoView {
     let ws = expect_context::<WsCtx>();
 
-    let (volumes, set_volumes) = signal(Vec::<(u64, String, String, u64)>::new());
+    let (volumes, set_volumes) = signal(Vec::<(u64, String, String, u64, Permission)>::new());
     let (roles, set_roles) = signal(Vec::<(u64, String)>::new());
     let (error, set_error) = signal(None::<String>);
     let (unauthorized, set_unauthorized) = signal(false);
@@ -16,6 +17,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
     let (name, set_name) = signal(String::new());
     let (path, set_path) = signal(String::new());
     let (selected_role, set_selected_role) = signal(None::<u64>);
+    let (selected_permission, set_selected_permission) = signal(Permission::ReadOnly);
 
     #[cfg(not(feature = "hydrate"))]
     let _ = (
@@ -27,6 +29,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
         set_name,
         set_path,
         set_selected_role,
+        set_selected_permission,
     );
 
     #[cfg(feature = "hydrate")]
@@ -38,7 +41,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
                 set_volumes.set(
                     volumes
                         .into_iter()
-                        .map(|v| (v.id, v.name, v.path, v.role_id))
+                        .map(|v| (v.id, v.name, v.path, v.role_id, v.permission))
                         .collect(),
                 );
                 set_error.set(None);
@@ -49,13 +52,19 @@ pub fn AdminVolumesPage() -> impl IntoView {
             }
             AdminResponse::VolumeAdded { volume } => {
                 set_volumes.update(|vols| {
-                    vols.push((volume.id, volume.name, volume.path, volume.role_id));
+                    vols.push((
+                        volume.id,
+                        volume.name,
+                        volume.path,
+                        volume.role_id,
+                        volume.permission,
+                    ));
                 });
                 set_error.set(None);
             }
             AdminResponse::VolumeRemoved { id } => {
                 set_volumes.update(|vols| {
-                    vols.retain(|(vid, _, _, _)| *vid != id);
+                    vols.retain(|(vid, _, _, _, _)| *vid != id);
                 });
                 set_error.set(None);
             }
@@ -114,7 +123,7 @@ pub fn AdminVolumesPage() -> impl IntoView {
             <div class="card bg-base-200 shadow-xl mb-6">
                 <div class="card-body">
                     <h2 class="card-title">"Add Volume"</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
                         <div class="form-control">
                             <label class="label"><span class="label-text">"Name"</span></label>
                             <input
@@ -154,6 +163,24 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                 disabled=Signal::derive(move || unauthorized.get())
                             />
                         </div>
+                        <div class="form-control">
+                            <label class="label"><span class="label-text">"Permission"</span></label>
+                            <select
+                                class="select select-bordered w-full"
+                                prop:disabled=move || unauthorized.get()
+                                on:change=move |ev| {
+                                    let _v = event_target_value(&ev);
+                                    #[cfg(feature = "hydrate")]
+                                    {
+                                        let perm = if _v == "rw" { Permission::ReadWrite } else { Permission::ReadOnly };
+                                        set_selected_permission.set(perm);
+                                    }
+                                }
+                            >
+                                <option value="ro" selected=move || selected_permission.get() == Permission::ReadOnly>"Read Only"</option>
+                                <option value="rw" selected=move || selected_permission.get() == Permission::ReadWrite>"Read & Write"</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-actions justify-end mt-4">
                         <button
@@ -169,10 +196,12 @@ pub fn AdminVolumesPage() -> impl IntoView {
                                             name: n,
                                             path: p,
                                             role_id: rid,
+                                            permission: selected_permission.get_untracked(),
                                         });
                                         set_name.set(String::new());
                                         set_path.set(String::new());
                                         set_selected_role.set(None);
+                                        set_selected_permission.set(Permission::ReadOnly);
                                     }
                                 }
                             }
@@ -192,18 +221,24 @@ pub fn AdminVolumesPage() -> impl IntoView {
                             <th>"Name"</th>
                             <th>"Host Path"</th>
                             <th>"Role"</th>
+                            <th>"Permission"</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {move || volumes.get().into_iter().map(|(id, vol_name, vol_path, vol_role_id)| {
+                        {move || volumes.get().into_iter().map(|(id, vol_name, vol_path, vol_role_id, vol_perm)| {
                             let rname = role_name(vol_role_id);
+                            let perm_label = match vol_perm {
+                                Permission::ReadOnly => "Read Only",
+                                Permission::ReadWrite => "Read & Write",
+                            };
                             view! {
                                 <tr>
                                     <td>{id}</td>
                                     <td>{vol_name}</td>
                                     <td>{vol_path}</td>
                                     <td>{rname}</td>
+                                    <td>{perm_label}</td>
                                     <td>
                                         <button
                                             class="btn btn-error btn-sm"

@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use filebrowser_types::Permission;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -8,6 +9,12 @@ pub struct Volume {
     pub name: String,
     pub path: String,
     pub role_id: u64,
+    #[serde(default = "default_permission")]
+    pub permission: Permission,
+}
+
+fn default_permission() -> Permission {
+    Permission::ReadOnly
 }
 
 /// Persistent volume configuration backed by sled.
@@ -31,13 +38,20 @@ impl VolumeStorage {
             .collect()
     }
 
-    pub fn add(&self, name: String, path: String, role_id: u64) -> sled::Result<Volume> {
+    pub fn add(
+        &self,
+        name: String,
+        path: String,
+        role_id: u64,
+        permission: Permission,
+    ) -> sled::Result<Volume> {
         let id = self.db.generate_id()?;
         let volume = Volume {
             id,
             name,
             path,
             role_id,
+            permission,
         };
         let json = serde_json::to_vec(&volume).expect("failed to serialize volume");
         self.db.insert(id.to_be_bytes(), json)?;
