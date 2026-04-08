@@ -335,6 +335,23 @@ fn format_datetime(dt: &Option<chrono::DateTime<chrono::Utc>>) -> String {
     }
 }
 
+fn entry_menu(_name: String) -> impl IntoView {
+    view! {
+        <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                </svg>
+            </div>
+            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-40 p-2 shadow">
+                <li><a>"Download"</a></li>
+                <li><a>"Rename"</a></li>
+                <li><a class="text-error">"Delete"</a></li>
+            </ul>
+        </div>
+    }
+}
+
 // --- List view ---
 
 fn view_list(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
@@ -344,12 +361,16 @@ fn view_list(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
             let is_dir = entry.is_dir();
             let href = entry.href(vid, cp);
             let cls = icon_color(is_dir);
+            let menu = entry_menu(entry.name.clone());
             view! {
                 <li>
-                    <a href=href.unwrap_or_default() class="flex items-center gap-2">
-                        {entry_icon(is_dir, cls)}
-                        <span>{entry.name}</span>
-                    </a>
+                    <div class="flex items-center justify-between w-full">
+                        <a href=href.unwrap_or_default() class="flex items-center gap-2 flex-1 min-w-0">
+                            {entry_icon(is_dir, cls)}
+                            <span class="truncate">{entry.name}</span>
+                        </a>
+                        {menu}
+                    </div>
                 </li>
             }
         })
@@ -375,6 +396,7 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
             let created = format_datetime(&entry.created_at);
             let updated = format_datetime(&entry.updated_at);
             let cls = icon_color(is_dir);
+            let menu = entry_menu(entry.name.clone());
             view! {
                 <tr>
                     <td>
@@ -387,12 +409,13 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                     <td class="text-right">{size_str}</td>
                     <td>{created}</td>
                     <td>{updated}</td>
+                    <td class="w-10">{menu}</td>
                 </tr>
             }
         })
         .collect();
     view! {
-        <div class="overflow-x-auto">
+        <div>
             <table class="table table-zebra w-full">
                 <thead>
                     <tr>
@@ -401,6 +424,7 @@ fn view_table(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
                         <th class="text-right">"Size"</th>
                         <th>"Created"</th>
                         <th>"Updated"</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>{rows}</tbody>
@@ -423,14 +447,15 @@ fn view_icons(items: Vec<FileEntry>, vid: u64, cp: &str) -> AnyView {
             } else {
                 "h-10 w-10 text-base-content/50"
             };
+            let menu = entry_menu(entry.name.clone());
             view! {
-                <a
-                    href=href
-                    class="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-base-200 transition-colors w-28 text-center"
-                >
-                    {entry_icon(is_dir, icon_cls)}
-                    <span class="text-xs truncate w-full">{entry.name}</span>
-                </a>
+                <div class="relative flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-base-200 transition-colors w-28 text-center">
+                    <div class="absolute top-1 right-1">{menu}</div>
+                    <a href=href class="flex flex-col items-center gap-1">
+                        {entry_icon(is_dir, icon_cls)}
+                        <span class="text-xs truncate w-full">{entry.name}</span>
+                    </a>
+                </div>
             }
         })
         .collect();
