@@ -31,7 +31,7 @@ tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5", features = ["serde"] }
 wasm-bindgen = { version = "0.2" }
-yew = { version = "0.21", features = ["csr"] }
+yew = { version = "0.23", features = ["csr"] }
 yew-router = { version = "0.18" }
 
 [profile.wasm-release]
