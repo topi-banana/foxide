@@ -1,41 +1,61 @@
-use leptos::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlSelectElement;
+use yew::prelude::*;
 
-/// Reusable Discord role selector dropdown.
-///
-/// - `roles`    – available roles as `(id, name)` pairs
-/// - `selected` – currently selected role id (None = placeholder shown)
-/// - `on_select` – called with the newly selected role id
-/// - `disabled` – whether the control is disabled
-#[component]
-pub fn RoleSelector(
-    roles: ReadSignal<Vec<(u64, String)>>,
-    selected: Signal<Option<u64>>,
-    on_select: impl Fn(u64) + 'static + Copy,
-    disabled: Signal<bool>,
-) -> AnyView {
-    view! {
-        <select
-            class="select select-bordered w-full"
-            prop:value=move || selected.get().map(|id| id.to_string()).unwrap_or_default()
-            on:change=move |ev| {
-                let value = event_target_value(&ev);
-                if let Ok(id) = value.parse::<u64>() {
-                    on_select(id);
-                }
-            }
-            disabled=move || disabled.get() || roles.get().is_empty()
-        >
-            <option value="" disabled selected=move || selected.get().is_none()>
-                "Select a role..."
-            </option>
-            {move || roles.get().into_iter().map(|(id, name)| {
-                let id_str = id.to_string();
-                let is_selected = move || selected.get() == Some(id);
-                view! {
-                    <option value=id_str.clone() selected=is_selected>{name.clone()}</option>
-                }
-            }).collect_view()}
-        </select>
+#[derive(Properties, PartialEq)]
+pub struct RoleSelectorProps {
+    pub roles: Vec<(u64, String)>,
+    pub selected: Option<u64>,
+    pub on_select: Callback<u64>,
+    pub disabled: bool,
+}
+
+pub struct RoleSelector;
+
+pub enum RoleSelectorMsg {
+    Change(String),
+}
+
+impl Component for RoleSelector {
+    type Message = RoleSelectorMsg;
+    type Properties = RoleSelectorProps;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self
     }
-    .into_any()
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            RoleSelectorMsg::Change(value) => {
+                if let Ok(id) = value.parse::<u64>() {
+                    ctx.props().on_select.emit(id);
+                }
+                false
+            }
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let props = ctx.props();
+        let selected = props.selected;
+        let onchange = ctx.link().callback(|ev: Event| {
+            let target: HtmlSelectElement = ev.target().unwrap().dyn_into().unwrap();
+            RoleSelectorMsg::Change(target.value())
+        });
+        let disabled = props.disabled || props.roles.is_empty();
+        let value = selected.map(|id| id.to_string()).unwrap_or_default();
+
+        html! {
+            <select class="select select-bordered w-full" {onchange} {disabled} {value}>
+                <option value="" disabled=true selected={selected.is_none()}>
+                    {"Select a role..."}
+                </option>
+                { for props.roles.iter().map(|(id, name)| {
+                    let id_str = id.to_string();
+                    let is_selected = selected == Some(*id);
+                    html! { <option value={id_str} selected={is_selected}>{name}</option> }
+                }) }
+            </select>
+        }
+    }
 }

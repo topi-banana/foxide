@@ -8,17 +8,30 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 chrono = { workspace = true }
-console_error_panic_hook = { workspace = true, optional = true }
+console_error_panic_hook = { workspace = true }
 filebrowser-types = { workspace = true }
-leptos = { workspace = true }
-leptos_meta = { workspace = true }
-leptos_router = { workspace = true }
+js-sys = "0.3"
 rmp-serde = { workspace = true }
 strum = { workspace = true }
-url = { version = "2.5", features = ["serde"] }
-wasm-bindgen = { workspace = true, optional = true }
-web-sys = { version = "0.3", optional = true, features = ["HtmlDocument"] }
+url = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { version = "0.3", features = [
+    "BinaryType",
+    "Document",
+    "Element",
+    "Event",
+    "EventTarget",
+    "HtmlDocument",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "Location",
+    "MessageEvent",
+    "WebSocket",
+    "Window",
+] }
+yew = { workspace = true }
+yew-router = { workspace = true }
 
-[features]
-hydrate = ["dep:console_error_panic_hook", "dep:wasm-bindgen", "dep:web-sys", "leptos/hydrate"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
+[[bin]]
+name = "filebrowser-frontend"
+path = "src/main.rs"

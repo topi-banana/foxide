@@ -5,27 +5,27 @@ mod logout;
 pub mod volume;
 mod ws;
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::FromRef;
-use leptos::prelude::*;
-use leptos_axum::{LeptosRoutes, generate_route_list};
 use serenity::http::Http;
 use tower_cookies::CookieManagerLayer;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
-
-use filebrowser_frontend::{App, shell};
 
 use crate::admin::AdminSettings;
 use crate::login::{TokenStorage, UserStorage};
 use crate::volume::VolumeStorage;
 use crate::ws::SocketStorage;
 
+const DEFAULT_SITE_ADDR: &str = "127.0.0.1:3000";
+const DEFAULT_DIST_DIR: &str = "dist";
+
 /// Application-wide shared state.
 #[derive(Clone)]
 pub struct AppState {
-    pub leptos_options: LeptosOptions,
+    pub site_addr: SocketAddr,
 
     pub client_id: u64,
     pub client_secret: String,
@@ -42,7 +42,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(
-        leptos_options: LeptosOptions,
+        site_addr: SocketAddr,
         client_id: u64,
         client_secret: String,
         guild_id: u64,
@@ -50,7 +50,7 @@ impl AppState {
         bot_token: &str,
     ) -> Self {
         Self {
-            leptos_options,
+            site_addr,
             client_id,
             client_secret,
             guild_id,
@@ -73,16 +73,15 @@ impl AppState {
     }
 }
 
-impl FromRef<AppState> for LeptosOptions {
-    fn from_ref(state: &AppState) -> Self {
-        state.leptos_options.clone()
-    }
-}
-
 pub async fn run() {
-    let conf = get_configuration(None).unwrap();
-    let leptos_options = conf.leptos_options;
-    let addr = leptos_options.site_addr;
+    let site_addr: SocketAddr = std::env::var("SITE_ADDR")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or_else(|| {
+            DEFAULT_SITE_ADDR
+                .parse()
+                .expect("DEFAULT_SITE_ADDR is invalid")
+        });
     let client_id: u64 = std::env::var("CLIENT_ID")
         .ok()
         .and_then(|v| v.parse().ok())
@@ -105,7 +104,7 @@ pub async fn run() {
         .ok()
         .and_then(|v| v.parse::<url::Url>().ok())
         .unwrap_or_else(|| {
-            let default = format!("http://{}", addr);
+            let default = format!("http://{}", site_addr);
             tracing::error!("REDIRECT_URI is not set or invalid, using {default}");
             url::Url::parse(&default).unwrap()
         });
@@ -115,7 +114,7 @@ pub async fn run() {
     });
 
     let state = AppState::new(
-        leptos_options,
+        site_addr,
         client_id,
         client_secret,
         guild_id,
@@ -124,27 +123,26 @@ pub async fn run() {
     );
     let app = build_app(state);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    tracing::info!("listening on http://{}", &addr);
+    let listener = tokio::net::TcpListener::bind(&site_addr).await.unwrap();
+    tracing::info!("listening on http://{}", &site_addr);
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }
 
-/// Build the full application router with API routes and Leptos SSR.
+/// Build the full application router with API routes and a static-file fallback
+/// that serves the Yew SPA built by `trunk`.
 pub fn build_app(state: AppState) -> Router {
-    let routes = generate_route_list(App);
+    let dist_dir = std::env::var("DIST_DIR").unwrap_or_else(|_| DEFAULT_DIST_DIR.to_string());
+    let index_path = format!("{dist_dir}/index.html");
+    let serve_dir = ServeDir::new(&dist_dir).fallback(ServeFile::new(&index_path));
 
     Router::<AppState>::new()
         .nest("/health", crate::health::router())
         .nest("/login", crate::login::router())
         .nest("/logout", crate::logout::router())
         .nest("/ws", crate::ws::router())
-        .leptos_routes(&state, routes, {
-            let options = state.leptos_options.clone();
-            move || shell(options.clone())
-        })
-        .fallback(leptos_axum::file_and_error_handler::<AppState, _>(shell))
+        .fallback_service(serve_dir)
         .layer(CookieManagerLayer::new())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

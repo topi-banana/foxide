@@ -1,112 +1,118 @@
-mod role_selector;
-mod tokens;
-mod volumes;
+pub mod role_selector;
+pub mod tokens;
+pub mod volumes;
 
-pub use role_selector::RoleSelector;
 pub use tokens::AdminTokensPage;
 pub use volumes::AdminVolumesPage;
 
-use leptos::prelude::*;
+use filebrowser_types::{AdminAction, ClientMsg};
+use yew::prelude::*;
 
-use crate::ws::WsCtx;
+use self::role_selector::RoleSelector;
+use crate::ws::AppCtx;
 
-#[component]
-pub fn AdminPage() -> impl IntoView {
-    let ws = expect_context::<WsCtx>();
+pub struct AdminPage {
+    ctx: AppCtx,
+    _ctx_handle: ContextHandle<AppCtx>,
+}
 
-    let (roles, set_roles) = signal(Vec::<(u64, String)>::new());
-    let (admin_role_id, set_admin_role_id) = signal(None::<u64>);
-    let (error, set_error) = signal(None::<String>);
-    let (unauthorized, set_unauthorized) = signal(false);
+pub enum Msg {
+    ContextChanged(AppCtx),
+    SelectRole(u64),
+}
 
-    #[cfg(not(feature = "hydrate"))]
-    let _ = (
-        &ws,
-        set_roles,
-        set_admin_role_id,
-        set_error,
-        set_unauthorized,
-    );
+impl Component for AdminPage {
+    type Message = Msg;
+    type Properties = ();
 
-    #[cfg(feature = "hydrate")]
-    {
-        use filebrowser_types::AdminResponse;
+    fn create(ctx: &Context<Self>) -> Self {
+        let (app_ctx, handle) = ctx
+            .link()
+            .context::<AppCtx>(ctx.link().callback(Msg::ContextChanged))
+            .expect("AppCtx not provided");
 
-        ws.set_on_admin(move |resp| match resp {
-            AdminResponse::Roles {
-                roles,
-                admin_role_id,
-            } => {
-                set_roles.set(roles.into_iter().map(|r| (r.id, r.name)).collect());
-                set_admin_role_id.set(admin_role_id);
-                set_error.set(None);
-                set_unauthorized.set(false);
-            }
-            AdminResponse::AdminRoleUpdated { role_id } => {
-                set_admin_role_id.set(Some(role_id));
-                set_error.set(None);
-            }
-            AdminResponse::Error { message } => {
-                set_error.set(Some(message));
-            }
-            AdminResponse::Unauthorized => {
-                set_unauthorized.set(true);
-            }
-            _ => {}
-        });
+        if app_ctx.data.ready {
+            app_ctx.send.emit(ClientMsg::Admin(AdminAction::GetRoles));
+        }
+
+        Self {
+            ctx: app_ctx,
+            _ctx_handle: handle,
+        }
     }
 
-    Effect::new(move |_| {
-        #[cfg(feature = "hydrate")]
-        if ws.ready.get() {
-            ws.send(filebrowser_types::AdminAction::GetRoles);
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            Msg::ContextChanged(c) => {
+                let was_not_ready = !self.ctx.data.ready;
+                let now_ready = c.data.ready;
+                self.ctx = c;
+                if was_not_ready && now_ready {
+                    self.ctx.send.emit(ClientMsg::Admin(AdminAction::GetRoles));
+                }
+                true
+            }
+            Msg::SelectRole(role_id) => {
+                self.ctx
+                    .send
+                    .emit(ClientMsg::Admin(AdminAction::SetAdminRole { role_id }));
+                false
+            }
         }
-    });
+    }
 
-    view! {
-        <div class="max-w-2xl mx-auto">
-            <h1 class="text-2xl font-bold mb-6">"Admin Settings"</h1>
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let admin = &self.ctx.data.admin;
 
-            {move || unauthorized.get().then(|| view! {
+        let unauthorized = admin.unauthorized.then(|| {
+            html! {
                 <div class="alert alert-error mb-4">
-                    <span>"You are not authorized to access admin settings."</span>
+                    <span>{"You are not authorized to access admin settings."}</span>
                 </div>
-            })}
+            }
+        });
 
-            {move || error.get().map(|msg| view! {
+        let error = admin.error.as_ref().map(|msg| {
+            html! {
                 <div class="alert alert-warning mb-4">
                     <span>{msg}</span>
                 </div>
-            })}
+            }
+        });
 
-            <div class="card bg-base-200 shadow-xl">
-                <div class="card-body">
-                    <h2 class="card-title">"Admin Role"</h2>
-                    <p class="text-base-content/70">"Select which Discord role grants admin access."</p>
+        let on_select_role = ctx.link().callback(Msg::SelectRole);
 
-                    <div class="form-control w-full mt-4">
-                        <RoleSelector
-                            roles=roles
-                            selected=Signal::derive(move || admin_role_id.get())
-                            on_select=move |_role_id| {
-                                #[cfg(feature = "hydrate")]
-                                ws.send(filebrowser_types::AdminAction::SetAdminRole { role_id: _role_id });
-                            }
-                            disabled=Signal::derive(move || unauthorized.get())
-                        />
+        html! {
+            <div class="max-w-2xl mx-auto">
+                <h1 class="text-2xl font-bold mb-6">{"Admin Settings"}</h1>
+                {unauthorized}
+                {error}
+
+                <div class="card bg-base-200 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title">{"Admin Role"}</h2>
+                        <p class="text-base-content/70">{"Select which Discord role grants admin access."}</p>
+                        <div class="form-control w-full mt-4">
+                            <RoleSelector
+                                roles={admin.roles.clone()}
+                                selected={admin.admin_role_id}
+                                on_select={on_select_role}
+                                disabled={admin.unauthorized}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-base-200 shadow-xl mt-6">
+                    <div class="card-body">
+                        <h2 class="card-title">{"Management"}</h2>
+                        <ul class="menu">
+                            <li><a href="/admin/tokens">{"Active Sessions"}</a></li>
+                            <li><a href="/admin/volumes">{"Volumes"}</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
-
-            <div class="card bg-base-200 shadow-xl mt-6">
-                <div class="card-body">
-                    <h2 class="card-title">"Management"</h2>
-                    <ul class="menu">
-                        <li><a href="/admin/tokens">"Active Sessions"</a></li>
-                        <li><a href="/admin/volumes">"Volumes"</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        }
     }
 }

@@ -1,163 +1,117 @@
-#[cfg(feature = "hydrate")]
-use filebrowser_types::{AdminResponse, BrowseResponse};
-use leptos::prelude::*;
+use std::rc::Rc;
 
-#[cfg(feature = "hydrate")]
-use std::sync::Arc;
+use filebrowser_types::{AdminResponse, BrowseResponse, ClientMsg};
+use yew::Callback;
 
-/// Centralised WebSocket context shared across all pages.
+use crate::header::Theme;
+
+/// Application-level state shared across the component tree via Yew context.
 ///
-/// Created once in [`App`], provided via Leptos context.
-/// Pages register an admin callback with [`set_on_admin`] and send
-/// actions with [`send`].
-#[derive(Clone, Copy)]
-pub struct WsCtx {
-    /// Logged-in username.  `None` until `Hello` arrives (or if unauthenticated).
-    pub username: RwSignal<Option<String>>,
-    /// Discord avatar URL.  `None` if unauthenticated or no avatar set.
-    pub avatar_url: RwSignal<Option<url::Url>>,
+/// `App` mutates `data` in response to incoming `ServerMsg`s, then re-emits
+/// a fresh [`AppCtx`] so that consumers (the page components) see the change.
+#[derive(Clone, PartialEq)]
+pub struct AppCtx {
+    pub data: Rc<AppData>,
+    pub theme: Theme,
+    pub sidebar_open: bool,
+
+    /// Send a [`ClientMsg`] over the open WebSocket.
+    pub send: Callback<ClientMsg>,
+    pub set_theme: Callback<Theme>,
+    pub set_sidebar_open: Callback<bool>,
+}
+
+#[derive(Default, Clone, PartialEq)]
+pub struct AppData {
+    /// Logged-in username. `None` until `Hello` arrives (or if unauthenticated).
+    pub username: Option<String>,
+    /// Discord avatar URL. `None` if unauthenticated or no avatar set.
+    pub avatar_url: Option<url::Url>,
     /// `true` once the server has replied with `Hello` or `Unauthenticated`.
-    pub ready: RwSignal<bool>,
+    pub ready: bool,
     /// Volumes accessible to the current user (populated after Hello).
-    pub volumes: RwSignal<Vec<(u64, String)>>,
+    pub volumes: Vec<(u64, String)>,
 
-    #[cfg(feature = "hydrate")]
-    ws: StoredValue<Option<web_sys::WebSocket>>,
-    #[cfg(feature = "hydrate")]
-    #[allow(clippy::type_complexity)]
-    on_admin: StoredValue<Option<Arc<dyn Fn(AdminResponse) + Send + Sync>>>,
-    #[cfg(feature = "hydrate")]
-    #[allow(clippy::type_complexity)]
-    on_browse: StoredValue<Option<Arc<dyn Fn(BrowseResponse) + Send + Sync>>>,
+    pub admin: AdminData,
+    pub browse: BrowseData,
 }
 
-impl Default for WsCtx {
-    fn default() -> Self {
-        Self::new()
-    }
+#[derive(Default, Clone, PartialEq)]
+pub struct AdminData {
+    pub roles: Vec<(u64, String)>,
+    pub admin_role_id: Option<u64>,
+    pub tokens: Vec<filebrowser_types::TokenInfo>,
+    pub volumes: Vec<filebrowser_types::VolumeInfo>,
+    pub error: Option<String>,
+    pub unauthorized: bool,
+    /// Bumped on every admin response so pages can detect new arrivals.
+    pub seq: u64,
 }
 
-impl WsCtx {
-    pub fn new() -> Self {
-        Self {
-            username: RwSignal::new(None),
-            avatar_url: RwSignal::new(None),
-            ready: RwSignal::new(false),
-            volumes: RwSignal::new(vec![]),
-            #[cfg(feature = "hydrate")]
-            ws: StoredValue::new(None),
-            #[cfg(feature = "hydrate")]
-            on_admin: StoredValue::new(None),
-            #[cfg(feature = "hydrate")]
-            on_browse: StoredValue::new(None),
+#[derive(Default, Clone, PartialEq)]
+pub struct BrowseData {
+    pub entries: Vec<filebrowser_types::DirEntry>,
+    pub error: Option<String>,
+    pub seq: u64,
+}
+
+impl AdminData {
+    pub fn apply(&mut self, resp: AdminResponse) {
+        self.seq = self.seq.wrapping_add(1);
+        match resp {
+            AdminResponse::Roles {
+                roles,
+                admin_role_id,
+            } => {
+                self.roles = roles.into_iter().map(|r| (r.id, r.name)).collect();
+                self.admin_role_id = admin_role_id;
+                self.error = None;
+                self.unauthorized = false;
+            }
+            AdminResponse::AdminRoleUpdated { role_id } => {
+                self.admin_role_id = Some(role_id);
+                self.error = None;
+            }
+            AdminResponse::Tokens { tokens } => {
+                self.tokens = tokens;
+                self.error = None;
+                self.unauthorized = false;
+            }
+            AdminResponse::Volumes { volumes } => {
+                self.volumes = volumes;
+                self.error = None;
+                self.unauthorized = false;
+            }
+            AdminResponse::VolumeAdded { volume } => {
+                self.volumes.push(volume);
+                self.error = None;
+            }
+            AdminResponse::VolumeRemoved { id } => {
+                self.volumes.retain(|v| v.id != id);
+                self.error = None;
+            }
+            AdminResponse::Error { message } => {
+                self.error = Some(message);
+            }
+            AdminResponse::Unauthorized => {
+                self.unauthorized = true;
+            }
         }
     }
+}
 
-    /// Open the WebSocket connection.  Call once from [`App`].
-    #[cfg(feature = "hydrate")]
-    pub fn connect(&self) {
-        use filebrowser_types::ServerMsg;
-        use wasm_bindgen::prelude::*;
-
-        let location = web_sys::window().unwrap().location();
-        let protocol = location.protocol().unwrap();
-        let host = location.host().unwrap();
-        let ws_protocol = if protocol == "https:" { "wss:" } else { "ws:" };
-        let url = format!("{ws_protocol}//{host}/ws");
-
-        let ws = web_sys::WebSocket::new(&url).unwrap();
-        ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-
-        let ctx = *self;
-        let ws_ref = ws.clone();
-        let onmessage = Closure::<dyn FnMut(_)>::new(move |e: web_sys::MessageEvent| {
-            if let Ok(buf) = e.data().dyn_into::<web_sys::js_sys::ArrayBuffer>() {
-                let bytes = web_sys::js_sys::Uint8Array::new(&buf).to_vec();
-                if let Ok(msg) = rmp_serde::from_slice::<ServerMsg>(&bytes) {
-                    match msg {
-                        ServerMsg::Hello {
-                            username,
-                            avatar_url,
-                        } => {
-                            ctx.username.set(Some(username));
-                            ctx.avatar_url.set(avatar_url);
-                            ctx.ready.set(true);
-                            // Fetch accessible volumes for the sidebar
-                            let req = filebrowser_types::ClientMsg::GetMyVolumes;
-                            let bytes = rmp_serde::to_vec(&req).unwrap();
-                            let _ = ws_ref.send_with_u8_array(&bytes);
-                        }
-                        ServerMsg::Unauthenticated => {
-                            ctx.username.set(None);
-                            ctx.avatar_url.set(None);
-                            ctx.ready.set(true);
-                        }
-                        ServerMsg::Admin(resp) => {
-                            ctx.on_admin.with_value(|handler| {
-                                if let Some(handler) = handler {
-                                    handler(resp);
-                                }
-                            });
-                        }
-                        ServerMsg::MyVolumes { volumes } => {
-                            ctx.volumes
-                                .set(volumes.into_iter().map(|v| (v.id, v.name)).collect());
-                        }
-                        ServerMsg::Browse(resp) => {
-                            ctx.on_browse.with_value(|handler| {
-                                if let Some(handler) = handler {
-                                    handler(resp);
-                                }
-                            });
-                        }
-                    }
-                }
+impl BrowseData {
+    pub fn apply(&mut self, resp: BrowseResponse) {
+        self.seq = self.seq.wrapping_add(1);
+        match resp {
+            BrowseResponse::DirectoryListing { entries } => {
+                self.entries = entries;
+                self.error = None;
             }
-        });
-        ws.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
-        onmessage.forget();
-
-        self.ws.set_value(Some(ws));
-    }
-
-    /// Send an admin action over the shared connection.
-    #[cfg(feature = "hydrate")]
-    pub fn send(&self, action: filebrowser_types::AdminAction) {
-        use filebrowser_types::ClientMsg;
-        self.ws.with_value(|ws| {
-            if let Some(ws) = ws {
-                let msg = ClientMsg::Admin(action);
-                let bytes = rmp_serde::to_vec(&msg).unwrap();
-                let _ = ws.send_with_u8_array(&bytes);
+            BrowseResponse::Error { message } => {
+                self.entries.clear();
+                self.error = Some(message);
             }
-        });
-    }
-
-    /// Register the callback that receives [`AdminResponse`] messages.
-    ///
-    /// Only one handler is active at a time — each page overwrites the
-    /// previous one on mount.
-    #[cfg(feature = "hydrate")]
-    pub fn set_on_admin(&self, handler: impl Fn(AdminResponse) + Send + Sync + 'static) {
-        self.on_admin.set_value(Some(Arc::new(handler)));
-    }
-
-    /// Send a browse action over the shared connection.
-    #[cfg(feature = "hydrate")]
-    pub fn send_browse(&self, action: filebrowser_types::BrowseAction) {
-        use filebrowser_types::ClientMsg;
-        self.ws.with_value(|ws| {
-            if let Some(ws) = ws {
-                let msg = ClientMsg::Browse(action);
-                let bytes = rmp_serde::to_vec(&msg).unwrap();
-                let _ = ws.send_with_u8_array(&bytes);
-            }
-        });
-    }
-
-    /// Register the callback that receives [`BrowseResponse`] messages.
-    #[cfg(feature = "hydrate")]
-    pub fn set_on_browse(&self, handler: impl Fn(BrowseResponse) + Send + Sync + 'static) {
-        self.on_browse.set_value(Some(Arc::new(handler)));
+        }
     }
 }

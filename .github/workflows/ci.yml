@@ -3,24 +3,33 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
 
 jobs:
-  fmt:
-    name: Format
+  frontend-build:
+    name: frontend build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/frontend-build
+      - uses: actions/upload-artifact@v7
         with:
-          components: rustfmt
+          name: dist
+          path: dist/
+
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup component add rustfmt
       - run: cargo fmt --all -- --check
 
   taplo:
-    name: TOML Format
+    name: TOML format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -31,58 +40,62 @@ jobs:
       - run: taplo fmt --check
 
   clippy:
-    name: Clippy
+    name: clippy
+    needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup component add clippy
+      - run: rustup target add wasm32-unknown-unknown
+
+      - uses: actions/download-artifact@v8
         with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: Clippy (SSR)
-        run: cargo clippy -p filebrowser-app --features ssr
-      - name: Clippy (hydrate)
-        run: cargo clippy -p filebrowser-frontend --features hydrate
+          name: dist
+          path: dist/
+
+      - run: cargo clippy --workspace --exclude filebrowser-frontend --all-targets -- -D warnings
+      - run: cargo clippy -p filebrowser-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
 
   unused-allow:
-    name: Unused Allow
+    name: unused allow
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - run: rustup component add clippy
       - run: cargo install cargo-unused-allow --locked
       - run: cargo-unused-allow --all-targets -- --workspace
 
   test:
-    name: Test
+    name: test
+    needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Run tests
-        run: cargo test -p filebrowser-app --features ssr
-      - name: Run backend tests
-        run: cargo test -p filebrowser-backend
-      - name: Run types tests
-        run: cargo test -p filebrowser-types
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - run: cargo test --workspace --exclude filebrowser-frontend
 
   machete:
-    name: Machete
+    name: cargo-machete
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: bnjbvr/cargo-machete@main
 
-  build:
-    name: Build
+  build-binary:
+    name: build release binary
+    needs: frontend-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Build (SSR)
-        run: cargo build -p filebrowser-app --features ssr
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - run: cargo build --release -p filebrowser-app

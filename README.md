@@ -1,73 +1,62 @@
 # Filebrowser
 
-A file browser built with Leptos (SSR + Hydration) and Axum.
+A file browser built with [Yew](https://yew.rs) (CSR via [Trunk](https://trunkrs.dev)) and Axum.
 
 ## Prerequisites
 
 - [Rust](https://rustup.rs/) (edition 2024)
-- [cargo-leptos](https://github.com/leptos-rs/cargo-leptos) (for dev server with hot reload)
-
-```bash
-cargo install cargo-leptos
-```
+- `wasm32-unknown-unknown` target: `rustup target add wasm32-unknown-unknown`
+- [Trunk](https://trunkrs.dev/): `cargo install trunk`
+- The standalone Tailwind CLI binary at `frontend/tailwindcss` and the daisyUI plugins (`frontend/daisyui.mjs`, `frontend/daisyui-theme.mjs`). Trunk's `pre_build` hook in `frontend/Trunk.toml` runs `./tailwindcss -i input.css -o output.css` automatically.
 
 ## Project Structure
 
-| Directory | Crate | Role |
-|-----------|-------|------|
-| `app/` | `filebrowser-app` | Server startup (Axum + Leptos SSR) |
-| `frontend/` | `filebrowser-frontend` | UI components, Router, hydration entry |
-| `backend/` | `filebrowser-backend` | API endpoints, server functions |
-| `types/` | `filebrowser-types` | Shared types |
+| Directory   | Crate                  | Role                                                                |
+| ----------- | ---------------------- | ------------------------------------------------------------------- |
+| `app/`      | `filebrowser-app`      | Server startup (Axum, serves WS / API / static SPA bundle)          |
+| `frontend/` | `filebrowser-frontend` | Yew (struct-based) UI components and router; entry for `trunk`     |
+| `backend/`  | `filebrowser-backend`  | API endpoints, WebSocket handler, persistence                       |
+| `types/`    | `filebrowser-types`    | Shared types                                                        |
+
+The Yew `App` component (top of the tree, `frontend/src/lib.rs`) opens the WebSocket connection in `Component::rendered(first_render=true)` and forwards messages to descendant pages via `ContextProvider<AppCtx>`.
 
 ## Development
 
-Start the dev server with hot reload:
-
 ```bash
-cargo leptos watch
+# 1. Fetch the Tailwind CLI and daisyUI plugins (first time only)
+cd frontend
+curl -sLo tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64
+curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
+curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
+chmod +x tailwindcss
+cd ..
+
+# 2. Build the SPA bundle. trunk writes to ./dist (workspace root).
+( cd frontend && trunk build )
+
+# 3. Start the backend; it serves API / WS plus the dist directory.
+cargo run -p filebrowser-app
+# → http://127.0.0.1:3000
 ```
 
-The app will be available at `http://127.0.0.1:3000`.
+For an iterative loop, run `trunk watch` in one terminal and `cargo run -p filebrowser-app` in another.
+
+`backend/src/lib.rs` reads the `DIST_DIR` env var (default `dist`) to locate the SPA bundle.
 
 ## Checks
 
-Run all checks locally before pushing:
-
 ```bash
-# Format
 cargo fmt --all -- --check
-
-# Lint (SSR side)
-cargo clippy -p filebrowser-app --features ssr
-
-# Lint (hydrate/WASM side)
-cargo clippy -p filebrowser-frontend --features hydrate
-
-# Tests (starts the server and tests API endpoints)
-cargo test -p filebrowser-app --features ssr
-
-# All backend/types tests
-cargo test -p filebrowser-backend --features ssr
-cargo test -p filebrowser-types
-```
-
-Or run everything at once:
-
-```bash
-cargo fmt --all -- --check \
-  && cargo clippy -p filebrowser-app --features ssr \
-  && cargo clippy -p filebrowser-frontend --features hydrate \
-  && cargo test -p filebrowser-app --features ssr \
-  && cargo test -p filebrowser-backend --features ssr \
-  && cargo test -p filebrowser-types
+cargo clippy --workspace --exclude filebrowser-frontend --all-targets -- -D warnings
+cargo clippy -p filebrowser-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
+cargo test --workspace --exclude filebrowser-frontend
 ```
 
 ## CI
 
-GitHub Actions runs the following on every push and PR to `main`:
+`.github/workflows/ci.yml`:
 
-- **Format** — `cargo fmt --check`
-- **Clippy** — lint both SSR and hydrate builds
-- **Test** — integration tests that start the server and verify API endpoints
-- **Build** — full SSR build
+- **frontend-build** runs `./.github/actions/frontend-build` (composite: rust toolchain → trunk → fetch tailwindcss/daisyUI → `trunk build --release`) and uploads `dist/` as an artifact.
+- **fmt** / **taplo** / **machete** / **unused-allow** are independent.
+- **clippy** and **test** download the `dist` artifact, then run host clippy with `--exclude filebrowser-frontend`, plus a separate wasm32 clippy on the frontend; tests skip the frontend.
+- **build-binary** downloads `dist` and runs `cargo build --release -p filebrowser-app`.

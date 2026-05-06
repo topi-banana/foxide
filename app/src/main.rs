@@ -1,9 +1,8 @@
-#[cfg(feature = "ssr")]
+use tracing::Level;
+use tracing_subscriber::EnvFilter;
+
 #[tokio::main]
 async fn main() {
-    use tracing::Level;
-    use tracing_subscriber::EnvFilter;
-
     tracing_subscriber::fmt()
         .with_max_level(Level::DEBUG)
         .with_env_filter(
@@ -13,10 +12,4 @@ async fn main() {
         .init();
 
     filebrowser_backend::run().await;
-}
-
-#[cfg(not(feature = "ssr"))]
-fn main() {
-    // This binary is only intended to be built with the `ssr` feature.
-    // WASM hydration is handled by the frontend crate.
 }

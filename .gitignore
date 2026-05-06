@@ -1,4 +1,6 @@
 /target
+/dist
+frontend/tailwindcss
 frontend/daisyui.mjs
 frontend/daisyui-theme.mjs
 frontend/output.css
