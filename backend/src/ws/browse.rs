@@ -5,7 +5,18 @@ use serenity::all::{GuildId, UserId};
 use crate::AppState;
 use crate::login::User;
 use crate::ws::SocketWriter;
-use foxide_types::{BrowseResponse, DirEntry, EntryType, ServerMsg};
+use foxide_types::{BrowseResponse, DirEntry, EntryActionKind, EntryType, ServerMsg};
+
+pub fn entry_action(user: &User, volume_id: u64, path: &str, action: EntryActionKind) {
+    tracing::info!(
+        user_id = user.user_id,
+        username = %user.username,
+        volume_id,
+        path,
+        action = ?action,
+        "entry menu action received",
+    );
+}
 
 pub async fn list_directory(
     state: &AppState,

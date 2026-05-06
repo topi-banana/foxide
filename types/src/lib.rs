@@ -12,7 +12,22 @@ pub enum ClientMsg {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BrowseAction {
-    ListDirectory { volume_id: u64, path: String },
+    ListDirectory {
+        volume_id: u64,
+        path: String,
+    },
+    EntryAction {
+        volume_id: u64,
+        path: String,
+        action: EntryActionKind,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EntryActionKind {
+    Download,
+    Rename,
+    Delete,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

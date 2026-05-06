@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use foxide_types::{BrowseAction, ClientMsg, EntryType};
+use foxide_types::{BrowseAction, ClientMsg, EntryActionKind, EntryType};
 use yew::prelude::*;
 use yew_router::scope_ext::{LocationHandle, RouterScopeExt};
 
@@ -55,16 +55,19 @@ fn write_viewmode_cookie(mode: ViewMode) {
 
 // --- File entry helpers ---
 
+fn entry_path(current_path: &str, name: &str) -> String {
+    if current_path == "/" {
+        format!("/{}", name)
+    } else {
+        format!("{}/{}", current_path.trim_end_matches('/'), name)
+    }
+}
+
 fn entry_href(name: &str, is_dir: bool, vid: u64, current_path: &str) -> Option<String> {
     if !is_dir {
         return None;
     }
-    let child_path = if current_path == "/" {
-        format!("/{}", name)
-    } else {
-        format!("{}/{}", current_path.trim_end_matches('/'), name)
-    };
-    Some(format!("/v/{vid}?path={child_path}"))
+    Some(format!("/v/{vid}?path={}", entry_path(current_path, name)))
 }
 
 // --- Component ---
@@ -247,10 +250,11 @@ impl Component for VolumePage {
             if entries.is_empty() {
                 html! { <p class="text-base-content/70">{"This directory is empty."}</p> }
             } else {
+                let send = &self.ctx.send;
                 match mode {
-                    ViewMode::List => view_list(entries, vid, &cp),
-                    ViewMode::Table => view_table(entries, vid, &cp),
-                    ViewMode::Icons => view_icons(entries, vid, &cp),
+                    ViewMode::List => view_list(entries, vid, &cp, send),
+                    ViewMode::Table => view_table(entries, vid, &cp, send),
+                    ViewMode::Icons => view_icons(entries, vid, &cp, send),
                 }
             }
         };
@@ -361,7 +365,21 @@ fn format_datetime(dt: &Option<chrono::DateTime<chrono::Utc>>) -> String {
     }
 }
 
-fn entry_menu() -> Html {
+fn entry_menu(send: &Callback<ClientMsg>, vid: u64, path: String) -> Html {
+    let make = |action: EntryActionKind| {
+        let send = send.clone();
+        let path = path.clone();
+        Callback::from(move |_| {
+            send.emit(ClientMsg::Browse(BrowseAction::EntryAction {
+                volume_id: vid,
+                path: path.clone(),
+                action,
+            }));
+        })
+    };
+    let on_download = make(EntryActionKind::Download);
+    let on_rename = make(EntryActionKind::Rename);
+    let on_delete = make(EntryActionKind::Delete);
     html! {
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square">
@@ -370,9 +388,9 @@ fn entry_menu() -> Html {
                 </svg>
             </div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-40 p-2 shadow">
-                <li><a>{"Download"}</a></li>
-                <li><a>{"Rename"}</a></li>
-                <li><a class="text-error">{"Delete"}</a></li>
+                <li><a onclick={on_download}>{"Download"}</a></li>
+                <li><a onclick={on_rename}>{"Rename"}</a></li>
+                <li><a onclick={on_delete} class="text-error">{"Delete"}</a></li>
             </ul>
         </div>
     }
@@ -380,13 +398,19 @@ fn entry_menu() -> Html {
 
 // --- View modes ---
 
-fn view_list(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_list(
+    items: &[foxide_types::DirEntry],
+    vid: u64,
+    cp: &str,
+    send: &Callback<ClientMsg>,
+) -> Html {
     let rows: Html = items
         .iter()
         .map(|e| {
             let is_dir = matches!(e.entry_type, EntryType::Directory);
             let href = entry_href(&e.name, is_dir, vid, cp).unwrap_or_default();
             let cls = icon_color(is_dir);
+            let path = entry_path(cp, &e.name);
             html! {
                 <li>
                     <div class="flex items-center justify-between w-full">
@@ -394,7 +418,7 @@ fn view_list(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
                             { entry_icon(is_dir, cls) }
                             <span class="truncate">{&e.name}</span>
                         </a>
-                        { entry_menu() }
+                        { entry_menu(send, vid, path) }
                     </div>
                 </li>
             }
@@ -405,7 +429,12 @@ fn view_list(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
     }
 }
 
-fn view_table(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_table(
+    items: &[foxide_types::DirEntry],
+    vid: u64,
+    cp: &str,
+    send: &Callback<ClientMsg>,
+) -> Html {
     let rows: Html = items
         .iter()
         .map(|e| {
@@ -416,6 +445,7 @@ fn view_table(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
             let created = format_datetime(&e.created_at);
             let updated = format_datetime(&e.updated_at);
             let cls = icon_color(is_dir);
+            let path = entry_path(cp, &e.name);
             html! {
                 <tr>
                     <td>
@@ -428,7 +458,7 @@ fn view_table(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
                     <td class="text-right">{size_str}</td>
                     <td>{created}</td>
                     <td>{updated}</td>
-                    <td class="w-10">{ entry_menu() }</td>
+                    <td class="w-10">{ entry_menu(send, vid, path) }</td>
                 </tr>
             }
         })
@@ -452,7 +482,12 @@ fn view_table(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
     }
 }
 
-fn view_icons(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_icons(
+    items: &[foxide_types::DirEntry],
+    vid: u64,
+    cp: &str,
+    send: &Callback<ClientMsg>,
+) -> Html {
     let cards: Html = items
         .iter()
         .map(|e| {
@@ -463,9 +498,10 @@ fn view_icons(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
             } else {
                 "h-10 w-10 text-base-content/50"
             };
+            let path = entry_path(cp, &e.name);
             html! {
                 <div class="relative flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-base-200 transition-colors w-28 text-center">
-                    <div class="absolute top-1 right-1">{ entry_menu() }</div>
+                    <div class="absolute top-1 right-1">{ entry_menu(send, vid, path) }</div>
                     <a href={href} class="flex flex-col items-center gap-1">
                         { entry_icon(is_dir, icon_cls) }
                         <span class="text-xs truncate w-full">{&e.name}</span>

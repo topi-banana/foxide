@@ -177,6 +177,13 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
                         BrowseAction::ListDirectory { volume_id, path } => {
                             browse::list_directory(&state, user, &writer, volume_id, &path).await;
                         }
+                        BrowseAction::EntryAction {
+                            volume_id,
+                            path,
+                            action,
+                        } => {
+                            browse::entry_action(user, volume_id, &path, action);
+                        }
                     }
                 }
                 None => {
