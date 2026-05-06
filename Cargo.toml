@@ -10,10 +10,10 @@ resolver = "3"
 axum = { version = "0.8", features = ["ws"] }
 chrono = { version = "0.4", features = ["serde"] }
 console_error_panic_hook = { version = "0.1" }
-filebrowser-app = { path = "app" }
-filebrowser-backend = { path = "backend" }
-filebrowser-frontend = { path = "frontend" }
-filebrowser-types = { path = "types" }
+foxide-app = { path = "app" }
+foxide-backend = { path = "backend" }
+foxide-frontend = { path = "frontend" }
+foxide-types = { path = "types" }
 futures = { version = "0.3" }
 rand = { version = "0.10" }
 reqwest = { version = "0.13", features = ["form", "json"] }

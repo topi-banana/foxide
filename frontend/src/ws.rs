@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use filebrowser_types::{AdminResponse, BrowseResponse, ClientMsg};
+use foxide_types::{AdminResponse, BrowseResponse, ClientMsg};
 use yew::Callback;
 
 use crate::header::Theme;
@@ -40,8 +40,8 @@ pub struct AppData {
 pub struct AdminData {
     pub roles: Vec<(u64, String)>,
     pub admin_role_id: Option<u64>,
-    pub tokens: Vec<filebrowser_types::TokenInfo>,
-    pub volumes: Vec<filebrowser_types::VolumeInfo>,
+    pub tokens: Vec<foxide_types::TokenInfo>,
+    pub volumes: Vec<foxide_types::VolumeInfo>,
     pub error: Option<String>,
     pub unauthorized: bool,
     /// Bumped on every admin response so pages can detect new arrivals.
@@ -50,7 +50,7 @@ pub struct AdminData {
 
 #[derive(Default, Clone, PartialEq)]
 pub struct BrowseData {
-    pub entries: Vec<filebrowser_types::DirEntry>,
+    pub entries: Vec<foxide_types::DirEntry>,
     pub error: Option<String>,
     pub seq: u64,
 }

@@ -1,4 +1,4 @@
-use filebrowser_types::{AdminAction, ClientMsg};
+use foxide_types::{AdminAction, ClientMsg};
 use yew::prelude::*;
 
 use crate::ws::AppCtx;

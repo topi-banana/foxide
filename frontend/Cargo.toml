@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "filebrowser-frontend"
+name = "foxide-frontend"
 version.workspace = true
 
 [lib]
@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 chrono = { workspace = true }
 console_error_panic_hook = { workspace = true }
-filebrowser-types = { workspace = true }
+foxide-types = { workspace = true }
 js-sys = "0.3"
 rmp-serde = { workspace = true }
 strum = { workspace = true }
@@ -33,5 +33,5 @@ yew = { workspace = true }
 yew-router = { workspace = true }
 
 [[bin]]
-name = "filebrowser-frontend"
+name = "foxide-frontend"
 path = "src/main.rs"

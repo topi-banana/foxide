@@ -1,4 +1,4 @@
-use filebrowser_types::{AdminAction, ClientMsg, Permission};
+use foxide_types::{AdminAction, ClientMsg, Permission};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;

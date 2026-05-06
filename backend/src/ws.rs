@@ -17,7 +17,7 @@ use tower_cookies::Cookies;
 
 use crate::AppState;
 use crate::login::User;
-use filebrowser_types::{ClientMsg, ServerMsg};
+use foxide_types::{ClientMsg, ServerMsg};
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/", get(ws_handler))
@@ -172,7 +172,7 @@ async fn handle_socket(socket: WebSocket, user: Option<User>, state: AppState) {
             },
             ClientMsg::Browse(action) => match &user {
                 Some(user) => {
-                    use filebrowser_types::BrowseAction;
+                    use foxide_types::BrowseAction;
                     match action {
                         BrowseAction::ListDirectory { volume_id, path } => {
                             browse::list_directory(&state, user, &writer, volume_id, &path).await;

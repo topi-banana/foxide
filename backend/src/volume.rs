@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use filebrowser_types::Permission;
+use foxide_types::Permission;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -4,16 +4,16 @@
 
 ## プロジェクト概要
 
-[Yew](https://yew.rs) (CSR、struct ベースの Component) と Axum で構築されたファイルブラウザ。フロントエンドのバンドルは [Trunk](https://trunkrs.dev) で生成し、Axum が workspace ルート直下の `dist/` を配信する。
+Foxide (file + oxide) は [Yew](https://yew.rs) (CSR、struct ベースの Component) と Axum で構築されたファイルブラウザ。フロントエンドのバンドルは [Trunk](https://trunkrs.dev) で生成し、Axum が workspace ルート直下の `dist/` を配信する。
 
 Rust 2024 edition のワークスペースで、4つのクレートから構成される:
 
 | ディレクトリ | クレート               | 役割                                                       |
 | ------------ | ---------------------- | ---------------------------------------------------------- |
-| `app/`       | `filebrowser-app`      | サーバー起動 (Axum、API/WS + SPA 配信)                     |
-| `frontend/`  | `filebrowser-frontend` | Yew 製 UI、ルーター、`trunk` のビルドエントリ              |
-| `backend/`   | `filebrowser-backend`  | API/WS ハンドラ、永続化                                    |
-| `types/`     | `filebrowser-types`    | 共有型定義                                                 |
+| `app/`       | `foxide-app`      | サーバー起動 (Axum、API/WS + SPA 配信)                     |
+| `frontend/`  | `foxide-frontend` | Yew 製 UI、ルーター、`trunk` のビルドエントリ              |
+| `backend/`   | `foxide-backend`  | API/WS ハンドラ、永続化                                    |
+| `types/`     | `foxide-types`    | 共有型定義                                                 |
 
 ## 重要な設計
 
@@ -44,11 +44,11 @@ cd ..
 ( cd frontend && trunk build )
 
 # 3. サーバー起動 (http://127.0.0.1:3000)
-cargo run -p filebrowser-app
+cargo run -p foxide-app
 
 # 開発中: ファイル変更で再ビルド
 ( cd frontend && trunk watch ) &
-cargo run -p filebrowser-app
+cargo run -p foxide-app
 ```
 
 ### Lint / フォーマット / テスト
@@ -57,9 +57,9 @@ cargo run -p filebrowser-app
 cargo fmt --all -- --check
 taplo fmt --check
 cargo-unused-allow --all-targets -- --workspace
-cargo clippy --workspace --exclude filebrowser-frontend --all-targets -- -D warnings
-cargo clippy -p filebrowser-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
-cargo test --workspace --exclude filebrowser-frontend
+cargo clippy --workspace --exclude foxide-frontend --all-targets -- -D warnings
+cargo clippy -p foxide-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
+cargo test --workspace --exclude foxide-frontend
 ```
 
 ### 全チェックを一括実行
@@ -68,9 +68,9 @@ cargo test --workspace --exclude filebrowser-frontend
 cargo fmt --all -- --check \
   && taplo fmt --check \
   && cargo-unused-allow --all-targets -- --workspace \
-  && cargo clippy --workspace --exclude filebrowser-frontend --all-targets -- -D warnings \
-  && cargo clippy -p filebrowser-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings \
-  && cargo test --workspace --exclude filebrowser-frontend
+  && cargo clippy --workspace --exclude foxide-frontend --all-targets -- -D warnings \
+  && cargo clippy -p foxide-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings \
+  && cargo test --workspace --exclude foxide-frontend
 ```
 
 ## CI
@@ -82,9 +82,9 @@ GitHub Actions (`.github/workflows/ci.yml`) は以下のジョブを実行する
 - **taplo** — `taplo fmt --check`
 - **clippy** — frontend を除外した host clippy と、wasm32 ターゲットの frontend clippy。`dist/` artifact を download してから走る (一部クレートが `dist/index.html` を実行時に参照するため、整合性確保のため artifact を共有)。
 - **unused-allow** — 未使用 `#[allow(...)]` の検出。
-- **test** — `cargo test --workspace --exclude filebrowser-frontend`。`dist/` artifact をダウンロード。
+- **test** — `cargo test --workspace --exclude foxide-frontend`。`dist/` artifact をダウンロード。
 - **machete** — `bnjbvr/cargo-machete` で未使用依存を検出。
-- **build-binary** — `cargo build --release -p filebrowser-app`。
+- **build-binary** — `cargo build --release -p foxide-app`。
 
 ## 注意事項
 

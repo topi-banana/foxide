@@ -53,8 +53,8 @@ jobs:
           name: dist
           path: dist/
 
-      - run: cargo clippy --workspace --exclude filebrowser-frontend --all-targets -- -D warnings
-      - run: cargo clippy -p filebrowser-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
+      - run: cargo clippy --workspace --exclude foxide-frontend --all-targets -- -D warnings
+      - run: cargo clippy -p foxide-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
 
   unused-allow:
     name: unused allow
@@ -77,7 +77,7 @@ jobs:
           name: dist
           path: dist/
 
-      - run: cargo test --workspace --exclude filebrowser-frontend
+      - run: cargo test --workspace --exclude foxide-frontend
 
   machete:
     name: cargo-machete
@@ -98,4 +98,4 @@ jobs:
           name: dist
           path: dist/
 
-      - run: cargo build --release -p filebrowser-app
+      - run: cargo build --release -p foxide-app

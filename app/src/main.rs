@@ -11,5 +11,5 @@ async fn main() {
         )
         .init();
 
-    filebrowser_backend::run().await;
+    foxide_backend::run().await;
 }

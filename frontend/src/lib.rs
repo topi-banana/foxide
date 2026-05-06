@@ -5,7 +5,7 @@ pub mod ws;
 
 use std::rc::Rc;
 
-use filebrowser_types::{ClientMsg, ServerMsg};
+use foxide_types::{ClientMsg, ServerMsg};
 use wasm_bindgen::prelude::*;
 use web_sys::WebSocket;
 use yew::prelude::*;
@@ -304,7 +304,7 @@ impl Component for HomePage {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <>
-                <h1 class="text-2xl font-bold mb-4">{"Welcome to Filebrowser"}</h1>
+                <h1 class="text-2xl font-bold mb-4">{"Welcome to Foxide"}</h1>
                 <p class="text-base-content/70">{"Select a folder from the sidebar to get started."}</p>
             </>
         }

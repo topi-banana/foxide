@@ -5,7 +5,7 @@ use serenity::all::{GuildId, UserId};
 use crate::AppState;
 use crate::login::User;
 use crate::ws::SocketWriter;
-use filebrowser_types::{BrowseResponse, DirEntry, EntryType, ServerMsg};
+use foxide_types::{BrowseResponse, DirEntry, EntryType, ServerMsg};
 
 pub async fn list_directory(
     state: &AppState,

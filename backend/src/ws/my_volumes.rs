@@ -3,7 +3,7 @@ use serenity::all::{GuildId, UserId};
 use crate::AppState;
 use crate::login::User;
 use crate::ws::SocketWriter;
-use filebrowser_types::{ServerMsg, VolumeInfo};
+use foxide_types::{ServerMsg, VolumeInfo};
 
 fn build_my_volumes(state: &AppState, user_role_ids: &[u64]) -> Vec<VolumeInfo> {
     state

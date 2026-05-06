@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use filebrowser_types::{BrowseAction, ClientMsg, EntryType};
+use foxide_types::{BrowseAction, ClientMsg, EntryType};
 use yew::prelude::*;
 use yew_router::scope_ext::{LocationHandle, RouterScopeExt};
 
@@ -380,7 +380,7 @@ fn entry_menu() -> Html {
 
 // --- View modes ---
 
-fn view_list(items: &[filebrowser_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_list(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
     let rows: Html = items
         .iter()
         .map(|e| {
@@ -405,7 +405,7 @@ fn view_list(items: &[filebrowser_types::DirEntry], vid: u64, cp: &str) -> Html 
     }
 }
 
-fn view_table(items: &[filebrowser_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_table(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
     let rows: Html = items
         .iter()
         .map(|e| {
@@ -452,7 +452,7 @@ fn view_table(items: &[filebrowser_types::DirEntry], vid: u64, cp: &str) -> Html
     }
 }
 
-fn view_icons(items: &[filebrowser_types::DirEntry], vid: u64, cp: &str) -> Html {
+fn view_icons(items: &[foxide_types::DirEntry], vid: u64, cp: &str) -> Html {
     let cards: Html = items
         .iter()
         .map(|e| {

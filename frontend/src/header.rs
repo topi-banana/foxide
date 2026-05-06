@@ -87,7 +87,7 @@ impl Component for Header {
                     </button>
                 </div>
                 <div class="navbar-center">
-                    <span class="text-lg font-bold">{"Filebrowser"}</span>
+                    <span class="text-lg font-bold">{"Foxide"}</span>
                 </div>
                 <div class="navbar-end gap-1">
                     <ThemeSwitcher />

@@ -1,4 +1,4 @@
-use filebrowser_backend::{AppState, build_app};
+use foxide_backend::{AppState, build_app};
 use reqwest::Client;
 use std::net::SocketAddr;
 

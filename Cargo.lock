@@ -570,69 +570,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
-name = "filebrowser-app"
-version = "0.1.0"
-dependencies = [
- "axum",
- "filebrowser-backend",
- "reqwest 0.13.2",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
-name = "filebrowser-backend"
-version = "0.1.0"
-dependencies = [
- "axum",
- "chrono",
- "filebrowser-types",
- "futures",
- "rand 0.10.0",
- "reqwest 0.13.2",
- "rmp-serde",
- "serde",
- "serde_json",
- "serenity",
- "sha2",
- "sled",
- "tokio",
- "tower-cookies",
- "tower-http",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "filebrowser-frontend"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "console_error_panic_hook",
- "filebrowser-types",
- "js-sys",
- "rmp-serde",
- "strum",
- "url",
- "wasm-bindgen",
- "web-sys",
- "yew",
- "yew-router",
-]
-
-[[package]]
-name = "filebrowser-types"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "url",
-]
-
-[[package]]
 name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -667,6 +604,69 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "foxide-app"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "foxide-backend",
+ "reqwest 0.13.2",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
+name = "foxide-backend"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "foxide-types",
+ "futures",
+ "rand 0.10.0",
+ "reqwest 0.13.2",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "serenity",
+ "sha2",
+ "sled",
+ "tokio",
+ "tower-cookies",
+ "tower-http",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "foxide-frontend"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "console_error_panic_hook",
+ "foxide-types",
+ "js-sys",
+ "rmp-serde",
+ "strum",
+ "url",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
+ "yew-router",
+]
+
+[[package]]
+name = "foxide-types"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "url",
 ]
 
 [[package]]

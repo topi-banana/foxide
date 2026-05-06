@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "filebrowser-backend"
+name = "foxide-backend"
 version.workspace = true
 
 [lib]
@@ -9,7 +9,7 @@ path = "src/lib.rs"
 [dependencies]
 axum = { workspace = true }
 chrono = { workspace = true }
-filebrowser-types = { workspace = true }
+foxide-types = { workspace = true }
 futures = { workspace = true }
 rand = { workspace = true }
 reqwest = { workspace = true }

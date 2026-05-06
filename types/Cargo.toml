@@ -1,6 +1,6 @@
 [package]
 edition.workspace = true
-name = "filebrowser-types"
+name = "foxide-types"
 version.workspace = true
 
 [dependencies]

@@ -1,6 +1,6 @@
 use crate::AppState;
 use crate::ws::SocketWriter;
-use filebrowser_types::{AdminResponse, ServerMsg, TokenInfo};
+use foxide_types::{AdminResponse, ServerMsg, TokenInfo};
 
 pub fn get_tokens(state: &AppState, writer: &SocketWriter) {
     let tokens = state

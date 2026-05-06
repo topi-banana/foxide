@@ -2,7 +2,7 @@ use serenity::all::GuildId;
 
 use crate::AppState;
 use crate::ws::SocketWriter;
-use filebrowser_types::{AdminResponse, RoleInfo, ServerMsg};
+use foxide_types::{AdminResponse, RoleInfo, ServerMsg};
 
 pub async fn get_roles(state: &AppState, writer: &SocketWriter) {
     let guild_id = GuildId::new(state.guild_id);

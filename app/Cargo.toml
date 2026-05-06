@@ -1,10 +1,10 @@
 [package]
 edition.workspace = true
-name = "filebrowser-app"
+name = "foxide-app"
 version.workspace = true
 
 [dependencies]
-filebrowser-backend = { workspace = true }
+foxide-backend = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

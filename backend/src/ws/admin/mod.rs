@@ -7,7 +7,7 @@ use serenity::all::{GuildId, UserId};
 use crate::AppState;
 use crate::login::User;
 use crate::ws::SocketWriter;
-use filebrowser_types::{AdminAction, AdminResponse, ServerMsg};
+use foxide_types::{AdminAction, AdminResponse, ServerMsg};
 
 /// Check if a user has the admin role in the guild.
 /// All admin actions use the same permission check.

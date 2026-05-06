@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::ws::SocketWriter;
 use crate::ws::my_volumes;
-use filebrowser_types::{AdminResponse, Permission, ServerMsg, VolumeInfo};
+use foxide_types::{AdminResponse, Permission, ServerMsg, VolumeInfo};
 
 pub fn get_volumes(state: &AppState, writer: &SocketWriter) {
     let volumes = state
