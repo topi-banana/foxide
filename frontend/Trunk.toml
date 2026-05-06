@@ -2,6 +2,6 @@
 dist = "../dist"
 
 [[hooks]]
-stage = "pre_build"
 command = "sh"
 command_arguments = ["-c", "./tailwindcss -i input.css -o output.css"]
+stage = "pre_build"
