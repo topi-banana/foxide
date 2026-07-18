@@ -13,7 +13,7 @@ jobs:
     name: frontend build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/frontend-build
       - uses: actions/upload-artifact@v7
         with:
@@ -24,7 +24,7 @@ jobs:
     name: rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: rustup component add rustfmt
       - run: cargo fmt --all -- --check
 
@@ -32,7 +32,7 @@ jobs:
     name: TOML format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install taplo
         run: |
           curl -fsSL https://github.com/tamasfe/taplo/releases/latest/download/taplo-linux-x86_64.gz \
@@ -44,7 +44,7 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: rustup component add clippy
       - run: rustup target add wasm32-unknown-unknown
 
@@ -60,7 +60,7 @@ jobs:
     name: unused allow
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: rustup component add clippy
       - run: cargo install cargo-unused-allow --locked
       - run: cargo-unused-allow --all-targets -- --workspace
@@ -70,7 +70,7 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
         with:
@@ -83,7 +83,7 @@ jobs:
     name: cargo-machete
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bnjbvr/cargo-machete@main
 
   build-binary:
@@ -91,7 +91,7 @@ jobs:
     needs: frontend-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
         with:
